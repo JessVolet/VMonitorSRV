@@ -1,12 +1,12 @@
 [
     {
-        "name": "Fedora Primary Server",
+        "name": "Fedora Primary",
         "host": "192.168.100.200",
         "port": "61208"
     },
     {
-        "name": "Ubuntu Secondary Server",
-        "host": "192.168.100.201",
+        "name": "VirtualMachine",
+        "host": "10.190.217.209",
         "port": "61208"
     }
 ]

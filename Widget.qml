@@ -66,7 +66,8 @@ PluginComponent {
     property real expandedContainerCpu: 0
     property var expandedContainerHistory: [0, 0, 0, 0, 0]
 
-    property string expandedSubvolName: ""
+    property string selectedSubvolName: ""
+    property var selectedSubvolData: root.subvolumesList.length > 0 ? root.subvolumesList[0] : ({ "name": "root", "mount": "/", "percent": 0, "used_bytes": 0 })
     property string virtualNetQuery: ""
 
     Timer {
@@ -155,7 +156,13 @@ PluginComponent {
             if (data && data.containers) root.containerList = data.containers;
         });
         httpGet(root.baseUrl + "/storage/subvolumes", function(data) {
-            if (data && data.subvolumes) root.subvolumesList = data.subvolumes;
+            if (data && data.subvolumes) {
+                root.subvolumesList = data.subvolumes;
+                if (data.subvolumes.length > 0 && !root.selectedSubvolName) {
+                    root.selectedSubvolName = data.subvolumes[0].name || "";
+                    root.selectedSubvolData = data.subvolumes[0];
+                }
+            }
         });
         httpGet(root.baseUrl + "/network", function(data) {
             if (data) {
@@ -808,102 +815,110 @@ PluginComponent {
                             }
 
                             StyledText {
-                                text: `Btrfs Subvolumes (${root.subvolumesList.length})`
+                                text: `Btrfs Subvolumes Wheel (${root.subvolumesList.length})`
                                 font.pixelSize: Theme.fontSizeMedium
                                 font.weight: Font.Bold
                                 color: Theme.surfaceText
                             }
 
                             ListView {
-                                id: subvolListView
+                                id: subvolCarousel
                                 Layout.fillWidth: true
-                                implicitHeight: Math.max(120, root.subvolumesList.length * 54)
+                                implicitHeight: 75
+                                orientation: ListView.Horizontal
                                 clip: true
                                 model: root.subvolumesList
                                 spacing: Theme.spacingS
 
                                 delegate: StyledRect {
-                                    width: ListView.view.width
-                                    height: isExpanded ? 100 : 48
-                                    radius: Theme.cornerRadiusSmall
-                                    color: Theme.surfaceContainerHigh
+                                    width: 145
+                                    height: 68
+                                    radius: Theme.cornerRadius
+                                    color: isSelected ? Theme.primary : Theme.surfaceContainerHigh
 
                                     property string subName: modelData.name || "subvol"
-                                    property bool isExpanded: root.expandedSubvolName === subName
+                                    property bool isSelected: root.selectedSubvolName === subName || (root.selectedSubvolName === "" && index === 0)
 
                                     ColumnLayout {
                                         anchors.fill: parent
                                         anchors.margins: Theme.spacingS
-                                        spacing: Theme.spacingXS
+                                        spacing: 2
 
                                         RowLayout {
                                             Layout.fillWidth: true
-
-                                            DankIcon { name: "folder"; color: Theme.primary }
-
-                                            ColumnLayout {
-                                                spacing: 1
-                                                Layout.fillWidth: true
-
-                                                StyledText {
-                                                    text: subName
-                                                    font.pixelSize: Theme.fontSizeSmall
-                                                    font.weight: Font.Bold
-                                                    color: Theme.surfaceText
-                                                    elide: Text.ElideRight
-                                                }
-
-                                                StyledText {
-                                                    text: `${modelData.mount || "/"} • ${root.bytesToGb(modelData.used_bytes)}`
-                                                    font.pixelSize: Theme.fontSizeSmall - 1
-                                                    color: Theme.surfaceVariantText
-                                                    elide: Text.ElideRight
-                                                }
+                                            DankIcon {
+                                                name: "folder"
+                                                color: isSelected ? Theme.onPrimary : Theme.primary
                                             }
-
                                             StyledText {
-                                                text: `${(modelData.percent || 0).toFixed(1)}%`
+                                                text: subName
                                                 font.pixelSize: Theme.fontSizeSmall
                                                 font.weight: Font.Bold
-                                                color: root.getMetricColor(modelData.percent || 0)
-                                            }
-
-                                            DankButton {
-                                                iconName: isExpanded ? "expand_less" : "expand_more"
-                                                backgroundColor: Theme.surfaceContainerHighest
-                                                textColor: Theme.surfaceText
-                                                onClicked: {
-                                                    if (isExpanded) root.expandedSubvolName = "";
-                                                    else root.expandedSubvolName = subName;
-                                                }
+                                                color: isSelected ? Theme.onPrimary : Theme.surfaceText
+                                                elide: Text.ElideRight
+                                                Layout.fillWidth: true
                                             }
                                         }
 
-                                        ColumnLayout {
-                                            visible: isExpanded
-                                            Layout.fillWidth: true
-                                            spacing: 2
-
-                                            StyledText {
-                                                text: `Mount Point: ${modelData.mount || "/"}`
-                                                font.pixelSize: Theme.fontSizeSmall - 1
-                                                color: Theme.surfaceText
-                                            }
-                                            StyledText {
-                                                text: `Capacity Usage: ${root.bytesToGb(modelData.used_bytes)} (${(modelData.percent || 0).toFixed(1)}%)`
-                                                font.pixelSize: Theme.fontSizeSmall - 1
-                                                color: Theme.primary
-                                                font.weight: Font.Bold
-                                            }
+                                        StyledText {
+                                            text: `${(modelData.percent || 0).toFixed(1)}% (${root.bytesToGb(modelData.used_bytes)})`
+                                            font.pixelSize: Theme.fontSizeSmall - 1
+                                            color: isSelected ? Theme.onPrimary : Theme.surfaceVariantText
+                                            elide: Text.ElideRight
                                         }
                                     }
 
                                     MouseArea {
                                         anchors.fill: parent
                                         onClicked: {
-                                            if (isExpanded) root.expandedSubvolName = "";
-                                            else root.expandedSubvolName = subName;
+                                            root.selectedSubvolName = subName;
+                                            root.selectedSubvolData = modelData;
                                         }
+                                    }
+                                }
+                            }
+
+                            StyledRect {
+                                Layout.fillWidth: true
+                                implicitHeight: 95
+                                radius: Theme.cornerRadius
+                                color: Theme.surfaceContainerHigh
+
+                                ColumnLayout {
+                                    anchors.fill: parent
+                                    anchors.margins: Theme.spacingM
+                                    spacing: Theme.spacingXS
+
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        DankIcon { name: "info"; color: Theme.primary }
+                                        StyledText {
+                                            text: `Selected Subvolume: ${root.selectedSubvolData.name || root.selectedSubvolName || "root"}`
+                                            font.pixelSize: Theme.fontSizeMedium
+                                            font.weight: Font.Bold
+                                            color: Theme.surfaceText
+                                        }
+                                        Item { Layout.fillWidth: true }
+                                        StyledText {
+                                            text: `${(root.selectedSubvolData.percent || 0).toFixed(1)}%`
+                                            font.pixelSize: Theme.fontSizeMedium
+                                            font.weight: Font.Bold
+                                            color: root.getMetricColor(root.selectedSubvolData.percent || 0)
+                                        }
+                                    }
+
+                                    StyledText {
+                                        text: `Mount Point: ${root.selectedSubvolData.mount || "/"}`
+                                        font.pixelSize: Theme.fontSizeSmall
+                                        color: Theme.surfaceVariantText
+                                        elide: Text.ElideRight
+                                    }
+
+                                    StyledText {
+                                        text: `Used Capacity: ${root.bytesToGb(root.selectedSubvolData.used_bytes)}`
+                                        font.pixelSize: Theme.fontSizeSmall
+                                        color: Theme.primary
+                                        font.weight: Font.Bold
                                     }
                                 }
                             }
@@ -1080,7 +1095,7 @@ PluginComponent {
                             spacing: Theme.spacingS
 
                             StyledText {
-                                text: "GPU Mode"
+                                text: "Containers"
                                 font.pixelSize: Theme.fontSizeLarge
                                 font.weight: Font.Bold
                                 color: Theme.surfaceText

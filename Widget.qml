@@ -651,353 +651,337 @@ PluginComponent {
                     ColumnLayout {
                         id: mainContent
                         width: parent.width
-                        spacing: Theme.spacingL
+                        spacing: Theme.spacingM
 
-                        ColumnLayout {
+                        StyledRect {
                             Layout.fillWidth: true
-                            spacing: Theme.spacingS
+                            implicitHeight: infoCol.implicitHeight + Theme.spacingM * 2
+                            radius: Theme.cornerRadius
+                            color: Theme.surfaceContainerHigh
 
-                            StyledText {
-                                text: "Information"
-                                font.pixelSize: Theme.fontSizeLarge
-                                font.weight: Font.Bold
-                                color: Theme.surfaceText
-                            }
+                            ColumnLayout {
+                                id: infoCol
+                                anchors.fill: parent
+                                anchors.margins: Theme.spacingM
+                                spacing: Theme.spacingS
 
-                            StyledRect {
-                                Layout.fillWidth: true
-                                implicitHeight: 165
-                                radius: Theme.cornerRadius
-                                color: Theme.surfaceContainerHigh
-
-                                ColumnLayout {
-                                    anchors.fill: parent
-                                    anchors.margins: Theme.spacingM
+                                RowLayout {
+                                    Layout.fillWidth: true
                                     spacing: Theme.spacingS
 
-                                    RowLayout {
-                                        Layout.fillWidth: true
-                                        spacing: Theme.spacingS
+                                    DankIcon {
+                                        name: root.getOsIconName(root.sysInfo.os_name)
+                                        size: 22
+                                        color: Theme.primary
+                                    }
 
+                                    StyledText {
+                                        text: root.sysInfo.hostname || root.currentServerObj.name || "server"
+                                        font.pixelSize: Theme.fontSizeLarge + 2
+                                        font.weight: Font.Bold
+                                        color: Theme.primary
+                                    }
+
+                                    Item { Layout.fillWidth: true }
+
+                                    StyledText {
+                                        text: root.isOffline ? "OFFLINE" : "ONLINE"
+                                        font.pixelSize: Theme.fontSizeSmall
+                                        font.weight: Font.Bold
+                                        color: root.isOffline ? Theme.error : Theme.primary
+                                    }
+                                }
+
+                                GridLayout {
+                                    columns: 2
+                                    rowSpacing: 4
+                                    columnSpacing: Theme.spacingM
+                                    Layout.fillWidth: true
+
+                                    StyledText { text: "CPU Model:"; font.pixelSize: Theme.fontSizeSmall; font.weight: Font.Bold; color: Theme.surfaceVariantText }
+                                    StyledText { text: root.sysInfo.cpu_name || "Intel(R) Core(TM) i5-8500 CPU @ 3.00GHz"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; elide: Text.ElideRight; Layout.fillWidth: true }
+
+                                    StyledText { text: "Hardware Model:"; font.pixelSize: Theme.fontSizeSmall; font.weight: Font.Bold; color: Theme.surfaceVariantText }
+                                    StyledText { text: root.sysInfo.hardware_model || "10SJS0FJ00"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; elide: Text.ElideRight; Layout.fillWidth: true }
+
+                                    StyledText { text: "OS Name:"; font.pixelSize: Theme.fontSizeSmall; font.weight: Font.Bold; color: Theme.surfaceVariantText }
+                                    RowLayout {
+                                        spacing: Theme.spacingXS
+                                        Layout.fillWidth: true
                                         DankIcon {
                                             name: root.getOsIconName(root.sysInfo.os_name)
-                                            size: 22
+                                            size: 16
                                             color: Theme.primary
                                         }
-
                                         StyledText {
-                                            text: root.sysInfo.hostname || root.currentServerObj.name || "server"
-                                            font.pixelSize: Theme.fontSizeLarge + 2
-                                            font.weight: Font.Bold
-                                            color: Theme.primary
-                                        }
-                                        Item { Layout.fillWidth: true }
-                                        StyledText {
-                                            text: root.isOffline ? "OFFLINE" : "ONLINE"
+                                            text: root.sysInfo.os_name || "Fedora Linux 44 64bit"
                                             font.pixelSize: Theme.fontSizeSmall
-                                            font.weight: Font.Bold
-                                            color: root.isOffline ? Theme.error : Theme.primary
-                                        }
-                                    }
-
-                                    GridLayout {
-                                        columns: 2
-                                        rowSpacing: 4
-                                        columnSpacing: Theme.spacingM
-                                        Layout.fillWidth: true
-
-                                        StyledText { text: "CPU Model:"; font.pixelSize: Theme.fontSizeSmall; font.weight: Font.Bold; color: Theme.surfaceVariantText }
-                                        StyledText { text: root.sysInfo.cpu_name || "Intel(R) Core(TM) i5-8500 CPU @ 3.00GHz"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; elide: Text.ElideRight; Layout.fillWidth: true }
-
-                                        StyledText { text: "Hardware Model:"; font.pixelSize: Theme.fontSizeSmall; font.weight: Font.Bold; color: Theme.surfaceVariantText }
-                                        StyledText { text: root.sysInfo.hardware_model || "10SJS0FJ00"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; elide: Text.ElideRight; Layout.fillWidth: true }
-
-                                        StyledText { text: "OS Name:"; font.pixelSize: Theme.fontSizeSmall; font.weight: Font.Bold; color: Theme.surfaceVariantText }
-                                        RowLayout {
-                                            spacing: Theme.spacingXS
+                                            color: Theme.surfaceText
+                                            elide: Text.ElideRight
                                             Layout.fillWidth: true
-                                            DankIcon {
-                                                name: root.getOsIconName(root.sysInfo.os_name)
-                                                size: 16
-                                                color: Theme.primary
-                                            }
-                                            StyledText {
-                                                text: root.sysInfo.os_name || "Fedora Linux 44 64bit"
-                                                font.pixelSize: Theme.fontSizeSmall
-                                                color: Theme.surfaceText
-                                                elide: Text.ElideRight
-                                                Layout.fillWidth: true
-                                            }
                                         }
-
-                                        StyledText { text: "Uptime:"; font.pixelSize: Theme.fontSizeSmall; font.weight: Font.Bold; color: Theme.surfaceVariantText }
-                                        StyledText { text: root.sysInfo.uptime || "17 days, 17:36:20"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; elide: Text.ElideRight; Layout.fillWidth: true }
                                     }
+
+                                    StyledText { text: "Uptime:"; font.pixelSize: Theme.fontSizeSmall; font.weight: Font.Bold; color: Theme.surfaceVariantText }
+                                    StyledText { text: root.sysInfo.uptime || "17 days, 17:36:20"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; elide: Text.ElideRight; Layout.fillWidth: true }
                                 }
                             }
                         }
 
-                        Rectangle {
+                        StyledRect {
                             Layout.fillWidth: true
-                            height: 1
-                            color: Theme.surfaceContainerHighest
-                        }
+                            implicitHeight: resCol.implicitHeight + Theme.spacingM * 2
+                            radius: Theme.cornerRadius
+                            color: Theme.surfaceContainerHigh
 
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            spacing: Theme.spacingS
+                            ColumnLayout {
+                                id: resCol
+                                anchors.fill: parent
+                                anchors.margins: Theme.spacingM
+                                spacing: Theme.spacingS
 
-                            StyledText {
-                                text: "Resources"
-                                font.pixelSize: Theme.fontSizeLarge
-                                font.weight: Font.Bold
-                                color: Theme.surfaceText
-                            }
-
-                            StyledRect {
-                                Layout.fillWidth: true
-                                implicitHeight: root.enableGraphs ? 210 : 135
-                                radius: Theme.cornerRadius
-                                color: Theme.surfaceContainerHigh
-
-                                ColumnLayout {
-                                    anchors.fill: parent
-                                    anchors.margins: Theme.spacingM
-                                    spacing: Theme.spacingS
-
-                                    RowLayout {
-                                        Layout.fillWidth: true
-                                        StyledText { text: "CPU Usage"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; font.weight: Font.Bold }
-                                        Item { Layout.fillWidth: true }
-                                        StyledText {
-                                            text: `${root.sysResources.cpu.usage_percent.toFixed(1)}% (${root.sysResources.cpu.temp_c || 0}°C)`
-                                            font.pixelSize: Theme.fontSizeSmall
-                                            color: root.getMetricColor(root.sysResources.cpu.usage_percent)
-                                            font.weight: Font.Bold
-                                        }
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    DankIcon { name: "speed"; color: Theme.primary }
+                                    StyledText {
+                                        text: "Resources"
+                                        font.pixelSize: Theme.fontSizeLarge
+                                        font.weight: Font.Bold
+                                        color: Theme.surfaceText
                                     }
+                                }
 
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    StyledText { text: "CPU Usage"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; font.weight: Font.Bold }
+                                    Item { Layout.fillWidth: true }
+                                    StyledText {
+                                        text: `${root.sysResources.cpu.usage_percent.toFixed(1)}% (${root.sysResources.cpu.temp_c || 0}°C)`
+                                        font.pixelSize: Theme.fontSizeSmall
+                                        color: root.getMetricColor(root.sysResources.cpu.usage_percent)
+                                        font.weight: Font.Bold
+                                    }
+                                }
+
+                                StyledRect {
+                                    Layout.fillWidth: true
+                                    height: 6
+                                    radius: 3
+                                    color: Theme.surfaceContainerHighest
                                     StyledRect {
-                                        Layout.fillWidth: true
-                                        height: 6
-                                        radius: 3
-                                        color: Theme.surfaceContainerHighest
-                                        StyledRect {
-                                            width: parent.width * Math.min(1.0, root.sysResources.cpu.usage_percent / 100.0)
-                                            height: parent.height
-                                            radius: parent.radius
-                                            color: root.getMetricColor(root.sysResources.cpu.usage_percent)
-                                        }
+                                        width: parent.width * Math.min(1.0, root.sysResources.cpu.usage_percent / 100.0)
+                                        height: parent.height
+                                        radius: parent.radius
+                                        color: root.getMetricColor(root.sysResources.cpu.usage_percent)
                                     }
+                                }
 
-                                    RowLayout {
-                                        Layout.fillWidth: true
-                                        StyledText { text: "RAM Usage"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; font.weight: Font.Bold }
-                                        Item { Layout.fillWidth: true }
-                                        StyledText {
-                                            text: `${root.sysResources.memory.usage_percent.toFixed(1)}%`
-                                            font.pixelSize: Theme.fontSizeSmall
-                                            color: root.getMetricColor(root.sysResources.memory.usage_percent)
-                                            font.weight: Font.Bold
-                                        }
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    StyledText { text: "RAM Usage"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; font.weight: Font.Bold }
+                                    Item { Layout.fillWidth: true }
+                                    StyledText {
+                                        text: `${root.sysResources.memory.usage_percent.toFixed(1)}%`
+                                        font.pixelSize: Theme.fontSizeSmall
+                                        color: root.getMetricColor(root.sysResources.memory.usage_percent)
+                                        font.weight: Font.Bold
                                     }
+                                }
 
+                                StyledRect {
+                                    Layout.fillWidth: true
+                                    height: 6
+                                    radius: 3
+                                    color: Theme.surfaceContainerHighest
                                     StyledRect {
-                                        Layout.fillWidth: true
-                                        height: 6
-                                        radius: 3
-                                        color: Theme.surfaceContainerHighest
-                                        StyledRect {
-                                            width: parent.width * Math.min(1.0, root.sysResources.memory.usage_percent / 100.0)
-                                            height: parent.height
-                                            radius: parent.radius
-                                            color: root.getMetricColor(root.sysResources.memory.usage_percent)
-                                        }
+                                        width: parent.width * Math.min(1.0, root.sysResources.memory.usage_percent / 100.0)
+                                        height: parent.height
+                                        radius: parent.radius
+                                        color: root.getMetricColor(root.sysResources.memory.usage_percent)
                                     }
+                                }
 
-                                    RowLayout {
-                                        Layout.fillWidth: true
-                                        StyledText { text: "Disk Root (/)"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; font.weight: Font.Bold }
-                                        Item { Layout.fillWidth: true }
-                                        StyledText {
-                                            text: `${root.sysResources.disk_root.usage_percent.toFixed(1)}%`
-                                            font.pixelSize: Theme.fontSizeSmall
-                                            color: root.getStorageColor(root.sysResources.disk_root.usage_percent)
-                                            font.weight: Font.Bold
-                                        }
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    StyledText { text: "Disk Root (/)"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; font.weight: Font.Bold }
+                                    Item { Layout.fillWidth: true }
+                                    StyledText {
+                                        text: `${root.sysResources.disk_root.usage_percent.toFixed(1)}%`
+                                        font.pixelSize: Theme.fontSizeSmall
+                                        color: root.getStorageColor(root.sysResources.disk_root.usage_percent)
+                                        font.weight: Font.Bold
                                     }
+                                }
 
+                                StyledRect {
+                                    Layout.fillWidth: true
+                                    height: 6
+                                    radius: 3
+                                    color: Theme.surfaceContainerHighest
                                     StyledRect {
-                                        Layout.fillWidth: true
-                                        height: 6
-                                        radius: 3
-                                        color: Theme.surfaceContainerHighest
-                                        StyledRect {
-                                            width: parent.width * Math.min(1.0, root.sysResources.disk_root.usage_percent / 100.0)
-                                            height: parent.height
-                                            radius: parent.radius
-                                            color: root.getStorageColor(root.sysResources.disk_root.usage_percent)
-                                        }
+                                        width: parent.width * Math.min(1.0, root.sysResources.disk_root.usage_percent / 100.0)
+                                        height: parent.height
+                                        radius: parent.radius
+                                        color: root.getStorageColor(root.sysResources.disk_root.usage_percent)
                                     }
+                                }
 
-                                    Item {
-                                        visible: root.enableGraphs
-                                        Layout.fillWidth: true
-                                        implicitHeight: 55
+                                Item {
+                                    visible: root.enableGraphs
+                                    Layout.fillWidth: true
+                                    implicitHeight: 55
 
-                                        property int hoverIndex: -1
-                                        property real hoverX: 0
-                                        property real hoverY: 0
-                                        property string hoverText: ""
+                                    property int hoverIndex: -1
+                                    property real hoverX: 0
+                                    property real hoverY: 0
+                                    property string hoverText: ""
 
-                                        Canvas {
-                                            id: cpuCanvas
-                                            anchors.fill: parent
-                                            onPaint: {
-                                                var ctx = getContext("2d");
-                                                ctx.clearRect(0, 0, width, height);
+                                    Canvas {
+                                        id: cpuCanvas
+                                        anchors.fill: parent
+                                        onPaint: {
+                                            var ctx = getContext("2d");
+                                            ctx.clearRect(0, 0, width, height);
 
-                                                var h = height - 12;
-                                                var w = width - 24;
-                                                var x0 = 20;
+                                            var h = height - 12;
+                                            var w = width - 24;
+                                            var x0 = 20;
+
+                                            ctx.beginPath();
+                                            ctx.lineWidth = 1;
+                                            ctx.strokeStyle = Theme.surfaceContainerHighest;
+                                            ctx.moveTo(x0, 2);
+                                            ctx.lineTo(x0 + w, 2);
+                                            ctx.moveTo(x0, h / 2 + 2);
+                                            ctx.lineTo(x0 + w, h / 2 + 2);
+                                            ctx.moveTo(x0, h + 2);
+                                            ctx.lineTo(x0 + w, h + 2);
+                                            ctx.stroke();
+
+                                            ctx.fillStyle = Theme.surfaceVariantText;
+                                            ctx.font = "8px sans-serif";
+                                            ctx.fillText("100%", 0, 8);
+                                            ctx.fillText("50%", 0, h / 2 + 5);
+                                            ctx.fillText("0%", 0, h + 5);
+
+                                            if (!root.cpuHistory || root.cpuHistory.length < 2) return;
+
+                                            ctx.beginPath();
+                                            ctx.lineWidth = 2;
+                                            ctx.strokeStyle = root.getMetricColor(root.sysResources.cpu.usage_percent);
+
+                                            var step = w / (root.cpuHistory.length - 1);
+                                            for (var i = 0; i < root.cpuHistory.length; i++) {
+                                                var val = root.cpuHistory[i] || 0;
+                                                var y = h - (val / 100.0 * h) + 2;
+                                                var x = x0 + i * step;
+                                                if (i === 0) ctx.moveTo(x, y);
+                                                else ctx.lineTo(x, y);
+                                            }
+                                            ctx.stroke();
+
+                                            if (parent.hoverIndex >= 0 && parent.hoverIndex < root.cpuHistory.length) {
+                                                var hx = x0 + parent.hoverIndex * step;
+                                                var hval = root.cpuHistory[parent.hoverIndex] || 0;
+                                                var hy = h - (hval / 100.0 * h) + 2;
 
                                                 ctx.beginPath();
                                                 ctx.lineWidth = 1;
-                                                ctx.strokeStyle = Theme.surfaceContainerHighest;
-                                                ctx.moveTo(x0, 2);
-                                                ctx.lineTo(x0 + w, 2);
-                                                ctx.moveTo(x0, h / 2 + 2);
-                                                ctx.lineTo(x0 + w, h / 2 + 2);
-                                                ctx.moveTo(x0, h + 2);
-                                                ctx.lineTo(x0 + w, h + 2);
+                                                ctx.strokeStyle = Theme.primary;
+                                                ctx.moveTo(hx, 0);
+                                                ctx.lineTo(hx, h + 4);
                                                 ctx.stroke();
-
-                                                ctx.fillStyle = Theme.surfaceVariantText;
-                                                ctx.font = "8px sans-serif";
-                                                ctx.fillText("100%", 0, 8);
-                                                ctx.fillText("50%", 0, h / 2 + 5);
-                                                ctx.fillText("0%", 0, h + 5);
-
-                                                if (!root.cpuHistory || root.cpuHistory.length < 2) return;
 
                                                 ctx.beginPath();
-                                                ctx.lineWidth = 2;
-                                                ctx.strokeStyle = root.getMetricColor(root.sysResources.cpu.usage_percent);
+                                                ctx.arc(hx, hy, 4, 0, 2 * Math.PI);
+                                                ctx.fillStyle = Theme.primary;
+                                                ctx.fill();
+                                            }
+                                        }
 
+                                        Connections {
+                                            target: root
+                                            function onCpuHistoryChanged() {
+                                                if (root.enableGraphs) cpuCanvas.requestPaint();
+                                            }
+                                        }
+                                    }
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        onPositionChanged: (mouse) => {
+                                            var w = width - 24;
+                                            var x0 = 20;
+                                            if (mouse.x >= x0 && mouse.x <= x0 + w && root.cpuHistory.length > 1) {
                                                 var step = w / (root.cpuHistory.length - 1);
-                                                for (var i = 0; i < root.cpuHistory.length; i++) {
-                                                    var val = root.cpuHistory[i] || 0;
-                                                    var y = h - (val / 100.0 * h) + 2;
-                                                    var x = x0 + i * step;
-                                                    if (i === 0) ctx.moveTo(x, y);
-                                                    else ctx.lineTo(x, y);
-                                                }
-                                                ctx.stroke();
-
-                                                if (parent.hoverIndex >= 0 && parent.hoverIndex < root.cpuHistory.length) {
-                                                    var hx = x0 + parent.hoverIndex * step;
-                                                    var hval = root.cpuHistory[parent.hoverIndex] || 0;
-                                                    var hy = h - (hval / 100.0 * h) + 2;
-
-                                                    ctx.beginPath();
-                                                    ctx.lineWidth = 1;
-                                                    ctx.strokeStyle = Theme.primary;
-                                                    ctx.moveTo(hx, 0);
-                                                    ctx.lineTo(hx, h + 4);
-                                                    ctx.stroke();
-
-                                                    ctx.beginPath();
-                                                    ctx.arc(hx, hy, 4, 0, 2 * Math.PI);
-                                                    ctx.fillStyle = Theme.primary;
-                                                    ctx.fill();
-                                                }
-                                            }
-
-                                            Connections {
-                                                target: root
-                                                function onCpuHistoryChanged() {
-                                                    if (root.enableGraphs) cpuCanvas.requestPaint();
-                                                }
-                                            }
-                                        }
-
-                                        MouseArea {
-                                            anchors.fill: parent
-                                            hoverEnabled: true
-                                            onPositionChanged: (mouse) => {
-                                                var w = width - 24;
-                                                var x0 = 20;
-                                                if (mouse.x >= x0 && mouse.x <= x0 + w && root.cpuHistory.length > 1) {
-                                                    var step = w / (root.cpuHistory.length - 1);
-                                                    var idx = Math.round((mouse.x - x0) / step);
-                                                    idx = Math.max(0, Math.min(root.cpuHistory.length - 1, idx));
-                                                    parent.hoverIndex = idx;
-                                                    parent.hoverX = x0 + idx * step;
-                                                    var val = root.cpuHistory[idx] || 0;
-                                                    parent.hoverY = (height - 12) - (val / 100.0 * (height - 12)) + 2;
-                                                    parent.hoverText = `CPU: ${val.toFixed(1)}%`;
-                                                } else {
-                                                    parent.hoverIndex = -1;
-                                                }
-                                                cpuCanvas.requestPaint();
-                                            }
-                                            onExited: {
+                                                var idx = Math.round((mouse.x - x0) / step);
+                                                idx = Math.max(0, Math.min(root.cpuHistory.length - 1, idx));
+                                                parent.hoverIndex = idx;
+                                                parent.hoverX = x0 + idx * step;
+                                                var val = root.cpuHistory[idx] || 0;
+                                                parent.hoverY = (height - 12) - (val / 100.0 * (height - 12)) + 2;
+                                                parent.hoverText = `CPU: ${val.toFixed(1)}%`;
+                                            } else {
                                                 parent.hoverIndex = -1;
-                                                cpuCanvas.requestPaint();
                                             }
+                                            cpuCanvas.requestPaint();
                                         }
+                                        onExited: {
+                                            parent.hoverIndex = -1;
+                                            cpuCanvas.requestPaint();
+                                        }
+                                    }
 
-                                        StyledRect {
-                                            visible: parent.hoverIndex >= 0
-                                            x: Math.min(parent.width - width - 4, Math.max(4, parent.hoverX - width / 2))
-                                            y: Math.max(0, parent.hoverY - 24)
-                                            width: hoverLabel.implicitWidth + 12
-                                            height: 20
-                                            radius: Theme.cornerRadiusSmall
-                                            color: Theme.surfaceContainerHighest
-                                            border.color: Theme.primary
-                                            border.width: 1
+                                    StyledRect {
+                                        visible: parent.hoverIndex >= 0
+                                        x: Math.min(parent.width - width - 4, Math.max(4, parent.hoverX - width / 2))
+                                        y: Math.max(0, parent.hoverY - 24)
+                                        width: hoverLabel.implicitWidth + 12
+                                        height: 20
+                                        radius: Theme.cornerRadiusSmall
+                                        color: Theme.surfaceContainerHighest
+                                        border.color: Theme.primary
+                                        border.width: 1
 
-                                            StyledText {
-                                                id: hoverLabel
-                                                anchors.centerIn: parent
-                                                text: parent.parent.hoverText
-                                                font.pixelSize: Theme.fontSizeSmall - 1
-                                                font.weight: Font.Bold
-                                                color: Theme.primary
-                                            }
+                                        StyledText {
+                                            id: hoverLabel
+                                            anchors.centerIn: parent
+                                            text: parent.parent.hoverText
+                                            font.pixelSize: Theme.fontSizeSmall - 1
+                                            font.weight: Font.Bold
+                                            color: Theme.primary
                                         }
                                     }
                                 }
                             }
                         }
 
-                        Rectangle {
+                        StyledRect {
                             Layout.fillWidth: true
-                            height: 1
-                            color: Theme.surfaceContainerHighest
-                        }
+                            implicitHeight: stgCol.implicitHeight + Theme.spacingM * 2
+                            radius: Theme.cornerRadius
+                            color: Theme.surfaceContainerHigh
 
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            spacing: Theme.spacingS
-
-                            StyledText {
-                                text: "Storage"
-                                font.pixelSize: Theme.fontSizeLarge
-                                font.weight: Font.Bold
-                                color: Theme.surfaceText
-                            }
-
-                            StyledRect {
-                                Layout.fillWidth: true
-                                implicitHeight: 70
-                                radius: Theme.cornerRadius
-                                color: Theme.surfaceContainerHigh
+                            ColumnLayout {
+                                id: stgCol
+                                anchors.fill: parent
+                                anchors.margins: Theme.spacingM
+                                spacing: Theme.spacingS
 
                                 RowLayout {
-                                    anchors.fill: parent
-                                    anchors.margins: Theme.spacingM
+                                    Layout.fillWidth: true
+                                    DankIcon { name: "pie_chart"; color: Theme.primary }
+                                    StyledText {
+                                        text: "Storage"
+                                        font.pixelSize: Theme.fontSizeLarge
+                                        font.weight: Font.Bold
+                                        color: Theme.surfaceText
+                                    }
+                                }
+
+                                RowLayout {
+                                    Layout.fillWidth: true
                                     spacing: Theme.spacingM
 
                                     DankIcon { name: "pie_chart"; color: root.getStorageColor(root.sysResources.disk_root.usage_percent) }
@@ -1015,424 +999,77 @@ PluginComponent {
                                         }
                                     }
                                 }
-                            }
 
-                            StyledText {
-                                text: `Btrfs Subvolumes Wheel (${root.subvolumesList.length})`
-                                font.pixelSize: Theme.fontSizeMedium
-                                font.weight: Font.Bold
-                                color: Theme.surfaceText
-                            }
-
-                            ListView {
-                                id: subvolCarousel
-                                Layout.fillWidth: true
-                                implicitHeight: 75
-                                orientation: ListView.Horizontal
-                                clip: true
-                                model: root.subvolumesList
-                                spacing: Theme.spacingS
-
-                                delegate: StyledRect {
-                                    width: 145
-                                    height: 68
-                                    radius: Theme.cornerRadius
-                                    color: isSelected ? root.getStorageColor(modelData.percent || 0) : Theme.surfaceContainerHigh
-
-                                    property string subName: modelData.name || "subvol"
-                                    property bool isSelected: root.selectedSubvolName === subName || (root.selectedSubvolName === "" && index === 0)
-
-                                    ColumnLayout {
-                                        anchors.fill: parent
-                                        anchors.margins: Theme.spacingS
-                                        spacing: 2
-
-                                        RowLayout {
-                                            Layout.fillWidth: true
-                                            DankIcon {
-                                                name: "folder"
-                                                color: isSelected ? Theme.onPrimary : root.getStorageColor(modelData.percent || 0)
-                                            }
-                                            StyledText {
-                                                text: subName
-                                                font.pixelSize: Theme.fontSizeSmall
-                                                font.weight: Font.Bold
-                                                color: isSelected ? Theme.onPrimary : Theme.surfaceText
-                                                elide: Text.ElideRight
-                                                Layout.fillWidth: true
-                                            }
-                                        }
-
-                                        StyledText {
-                                            text: `${(modelData.percent || 0).toFixed(1)}% (${root.bytesToGb(modelData.used_bytes)})`
-                                            font.pixelSize: Theme.fontSizeSmall - 1
-                                            color: isSelected ? Theme.onPrimary : root.getStorageColor(modelData.percent || 0)
-                                            font.weight: Font.Bold
-                                            elide: Text.ElideRight
-                                        }
-                                    }
-
-                                    MouseArea {
-                                        anchors.fill: parent
-                                        onClicked: {
-                                            root.selectedSubvolName = subName;
-                                            root.selectedSubvolData = modelData;
-                                        }
-                                    }
+                                StyledText {
+                                    text: `Btrfs Subvolumes Wheel (${root.subvolumesList.length})`
+                                    font.pixelSize: Theme.fontSizeMedium
+                                    font.weight: Font.Bold
+                                    color: Theme.surfaceText
                                 }
-                            }
 
-                            StyledRect {
-                                Layout.fillWidth: true
-                                implicitHeight: 95
-                                radius: Theme.cornerRadius
-                                color: Theme.surfaceContainerHigh
+                                ListView {
+                                    id: subvolCarousel
+                                    Layout.fillWidth: true
+                                    implicitHeight: 75
+                                    orientation: ListView.Horizontal
+                                    clip: true
+                                    model: root.subvolumesList
+                                    spacing: Theme.spacingS
 
-                                ColumnLayout {
-                                    anchors.fill: parent
-                                    anchors.margins: Theme.spacingM
-                                    spacing: Theme.spacingXS
+                                    delegate: StyledRect {
+                                        width: 145
+                                        height: 68
+                                        radius: Theme.cornerRadius
+                                        color: isSelected ? root.getStorageColor(modelData.percent || 0) : Theme.surfaceContainerHighest
 
-                                    RowLayout {
-                                        Layout.fillWidth: true
-                                        DankIcon { name: "info"; color: root.getStorageColor(root.selectedSubvolData.percent || 0) }
-                                        StyledText {
-                                            text: `Selected Subvolume: ${root.selectedSubvolData.name || root.selectedSubvolName || "root"}`
-                                            font.pixelSize: Theme.fontSizeMedium
-                                            font.weight: Font.Bold
-                                            color: Theme.surfaceText
-                                        }
-                                        Item { Layout.fillWidth: true }
-                                        StyledText {
-                                            text: `${(root.selectedSubvolData.percent || 0).toFixed(1)}%`
-                                            font.pixelSize: Theme.fontSizeMedium
-                                            font.weight: Font.Bold
-                                            color: root.getStorageColor(root.selectedSubvolData.percent || 0)
-                                        }
-                                    }
-
-                                    StyledText {
-                                        text: `Mount Point: ${root.selectedSubvolData.mount || "/"}`
-                                        font.pixelSize: Theme.fontSizeSmall
-                                        color: Theme.surfaceVariantText
-                                        elide: Text.ElideRight
-                                    }
-
-                                    StyledText {
-                                        text: `Used Capacity: ${root.bytesToGb(root.selectedSubvolData.used_bytes)}`
-                                        font.pixelSize: Theme.fontSizeSmall
-                                        color: root.getStorageColor(root.selectedSubvolData.percent || 0)
-                                        font.weight: Font.Bold
-                                    }
-                                }
-                            }
-                        }
-
-                        Rectangle {
-                            Layout.fillWidth: true
-                            height: 1
-                            color: Theme.surfaceContainerHighest
-                        }
-
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            spacing: Theme.spacingS
-
-                            StyledText {
-                                text: "Network"
-                                font.pixelSize: Theme.fontSizeLarge
-                                font.weight: Font.Bold
-                                color: Theme.surfaceText
-                            }
-
-                            StyledRect {
-                                Layout.fillWidth: true
-                                implicitHeight: root.enableGraphs ? 135 : 60
-                                radius: Theme.cornerRadius
-                                color: Theme.surfaceContainerHigh
-
-                                ColumnLayout {
-                                    anchors.fill: parent
-                                    anchors.margins: Theme.spacingS
-                                    spacing: Theme.spacingXS
-
-                                    RowLayout {
-                                        Layout.fillWidth: true
-
-                                        DankIcon { name: "lan"; color: Theme.primary }
+                                        property string subName: modelData.name || "subvol"
+                                        property bool isSelected: root.selectedSubvolName === subName || (root.selectedSubvolName === "" && index === 0)
 
                                         ColumnLayout {
-                                            spacing: 1
-                                            StyledText {
-                                                text: `Interface: ${root.selectedNetId} (IP: ${root.getIpString(root.selectedNetData)})`
-                                                font.pixelSize: Theme.fontSizeSmall
-                                                font.weight: Font.Bold
-                                                color: Theme.surfaceText
-                                            }
-                                            StyledText {
-                                                text: `RX Rate: ${root.getRxRateString(root.selectedNetData)}  |  TX Rate: ${root.getTxRateString(root.selectedNetData)}`
-                                                font.pixelSize: Theme.fontSizeSmall - 1
-                                                color: Theme.surfaceVariantText
-                                            }
-                                        }
-                                    }
-
-                                    Item {
-                                        visible: root.enableGraphs
-                                        Layout.fillWidth: true
-                                        implicitHeight: 65
-
-                                        property int hoverIndex: -1
-                                        property real hoverX: 0
-                                        property real hoverY: 0
-                                        property string hoverText: ""
-
-                                        Canvas {
-                                            id: netCanvas
                                             anchors.fill: parent
-                                            onPaint: {
-                                                var ctx = getContext("2d");
-                                                ctx.clearRect(0, 0, width, height);
+                                            anchors.margins: Theme.spacingS
+                                            spacing: 2
 
-                                                var h = height - 12;
-                                                var w = width - 40;
-                                                var x0 = 36;
-
-                                                var maxRx = 1;
-                                                for (var i = 0; i < root.netRxHistory.length; i++) {
-                                                    if (root.netRxHistory[i] > maxRx) maxRx = root.netRxHistory[i];
+                                            RowLayout {
+                                                Layout.fillWidth: true
+                                                DankIcon {
+                                                    name: "folder"
+                                                    color: isSelected ? Theme.onPrimary : root.getStorageColor(modelData.percent || 0)
                                                 }
-
-                                                ctx.beginPath();
-                                                ctx.lineWidth = 1;
-                                                ctx.strokeStyle = Theme.surfaceContainerHighest;
-                                                ctx.moveTo(x0, 2);
-                                                ctx.lineTo(x0 + w, 2);
-                                                ctx.moveTo(x0, h / 2 + 2);
-                                                ctx.lineTo(x0 + w, h / 2 + 2);
-                                                ctx.moveTo(x0, h + 2);
-                                                ctx.lineTo(x0 + w, h + 2);
-                                                ctx.stroke();
-
-                                                ctx.fillStyle = Theme.surfaceVariantText;
-                                                ctx.font = "8px sans-serif";
-                                                ctx.fillText(root.formatBytesRate(maxRx * 1024), 0, 8);
-                                                ctx.fillText(root.formatBytesRate((maxRx / 2) * 1024), 0, h / 2 + 5);
-                                                ctx.fillText("0 B/s", 0, h + 5);
-
-                                                if (!root.netRxHistory || root.netRxHistory.length < 2) return;
-
-                                                ctx.beginPath();
-                                                ctx.lineWidth = 2;
-                                                ctx.strokeStyle = Theme.primary;
-
-                                                var step = w / (root.netRxHistory.length - 1);
-                                                for (var j = 0; j < root.netRxHistory.length; j++) {
-                                                    var val = root.netRxHistory[j] || 0;
-                                                    var y = h - (val / maxRx * h) + 2;
-                                                    var x = x0 + j * step;
-                                                    if (j === 0) ctx.moveTo(x, y);
-                                                    else ctx.lineTo(x, y);
-                                                }
-                                                ctx.stroke();
-
-                                                if (parent.hoverIndex >= 0 && parent.hoverIndex < root.netRxHistory.length) {
-                                                    var hx = x0 + parent.hoverIndex * step;
-                                                    var hval = root.netRxHistory[parent.hoverIndex] || 0;
-                                                    var hy = h - (hval / maxRx * h) + 2;
-
-                                                    ctx.beginPath();
-                                                    ctx.lineWidth = 1;
-                                                    ctx.strokeStyle = Theme.primary;
-                                                    ctx.moveTo(hx, 0);
-                                                    ctx.lineTo(hx, h + 4);
-                                                    ctx.stroke();
-
-                                                    ctx.beginPath();
-                                                    ctx.arc(hx, hy, 4, 0, 2 * Math.PI);
-                                                    ctx.fillStyle = Theme.primary;
-                                                    ctx.fill();
+                                                StyledText {
+                                                    text: subName
+                                                    font.pixelSize: Theme.fontSizeSmall
+                                                    font.weight: Font.Bold
+                                                    color: isSelected ? Theme.onPrimary : Theme.surfaceText
+                                                    elide: Text.ElideRight
+                                                    Layout.fillWidth: true
                                                 }
                                             }
 
-                                            Connections {
-                                                target: root
-                                                function onNetRxHistoryChanged() {
-                                                    if (root.enableGraphs) netCanvas.requestPaint();
-                                                }
+                                            StyledText {
+                                                text: `${(modelData.percent || 0).toFixed(1)}% (${root.bytesToGb(modelData.used_bytes)})`
+                                                font.pixelSize: Theme.fontSizeSmall - 1
+                                                color: isSelected ? Theme.onPrimary : root.getStorageColor(modelData.percent || 0)
+                                                font.weight: Font.Bold
+                                                elide: Text.ElideRight
                                             }
                                         }
 
                                         MouseArea {
                                             anchors.fill: parent
-                                            hoverEnabled: true
-                                            onPositionChanged: (mouse) => {
-                                                var w = width - 40;
-                                                var x0 = 36;
-                                                if (mouse.x >= x0 && mouse.x <= x0 + w && root.netRxHistory.length > 1) {
-                                                    var step = w / (root.netRxHistory.length - 1);
-                                                    var idx = Math.round((mouse.x - x0) / step);
-                                                    idx = Math.max(0, Math.min(root.netRxHistory.length - 1, idx));
-                                                    parent.hoverIndex = idx;
-                                                    parent.hoverX = x0 + idx * step;
-                                                    var valKb = root.netRxHistory[idx] || 0;
-                                                    var maxRx = 1;
-                                                    for (var i = 0; i < root.netRxHistory.length; i++) {
-                                                        if (root.netRxHistory[i] > maxRx) maxRx = root.netRxHistory[i];
-                                                    }
-                                                    parent.hoverY = (height - 12) - (valKb / maxRx * (height - 12)) + 2;
-                                                    parent.hoverText = `RX: ${root.formatBytesRate(valKb * 1024)}`;
-                                                } else {
-                                                    parent.hoverIndex = -1;
-                                                }
-                                                netCanvas.requestPaint();
-                                            }
-                                            onExited: {
-                                                parent.hoverIndex = -1;
-                                                netCanvas.requestPaint();
-                                            }
-                                        }
-
-                                        StyledRect {
-                                            visible: parent.hoverIndex >= 0
-                                            x: Math.min(parent.width - width - 4, Math.max(4, parent.hoverX - width / 2))
-                                            y: Math.max(0, parent.hoverY - 24)
-                                            width: netHoverLabel.implicitWidth + 12
-                                            height: 20
-                                            radius: Theme.cornerRadiusSmall
-                                            color: Theme.surfaceContainerHighest
-                                            border.color: Theme.primary
-                                            border.width: 1
-
-                                            StyledText {
-                                                id: netHoverLabel
-                                                anchors.centerIn: parent
-                                                text: parent.parent.hoverText
-                                                font.pixelSize: Theme.fontSizeSmall - 1
-                                                font.weight: Font.Bold
-                                                color: Theme.primary
+                                            onClicked: {
+                                                root.selectedSubvolName = subName;
+                                                root.selectedSubvolData = modelData;
                                             }
                                         }
                                     }
                                 }
-                            }
 
-                            StyledText {
-                                text: `Select Interface to Graph (${root.getAllInterfacesList().length})`
-                                font.pixelSize: Theme.fontSizeMedium
-                                font.weight: Font.Bold
-                                color: Theme.surfaceText
-                            }
-
-                            DankTextField {
-                                Layout.fillWidth: true
-                                placeholderText: "Filter physical & virtual interfaces..."
-                                text: root.virtualNetQuery
-                                onTextChanged: root.virtualNetQuery = text
-                            }
-
-                            ListView {
-                                Layout.fillWidth: true
-                                implicitHeight: Math.min(150, Math.max(45, root.getAllInterfacesList().length * 42))
-                                clip: true
-                                model: root.getAllInterfacesList()
-                                spacing: Theme.spacingXS
-
-                                delegate: StyledRect {
-                                    width: ListView.view.width
-                                    height: 38
+                                StyledRect {
+                                    Layout.fillWidth: true
+                                    implicitHeight: 85
                                     radius: Theme.cornerRadiusSmall
-                                    color: isSelected ? Theme.surfaceContainerHighest : Theme.surfaceContainerHigh
-
-                                    property string itemIfName: modelData.name || `if${index}`
-                                    property bool isVirt: modelData.isVirtual
-                                    property bool isSelected: root.selectedNetId === itemIfName
-
-                                    RowLayout {
-                                        anchors.fill: parent
-                                        anchors.margins: Theme.spacingS
-
-                                        DankIcon {
-                                            name: isSelected ? "check_circle" : (isVirt ? "hub" : "lan")
-                                            color: isSelected ? Theme.primary : Theme.surfaceVariantText
-                                        }
-
-                                        StyledText {
-                                            text: `${itemIfName} ${isVirt ? "(Virtual)" : "(Physical)"}`
-                                            font.pixelSize: Theme.fontSizeSmall
-                                            font.weight: isSelected ? Font.Bold : Font.Normal
-                                            color: isSelected ? Theme.primary : Theme.surfaceText
-                                            Layout.fillWidth: true
-                                        }
-
-                                        StyledRect {
-                                            width: 60
-                                            height: 26
-                                            radius: Theme.cornerRadiusSmall
-                                            color: isSelected ? Theme.primary : Theme.surfaceContainerHighest
-
-                                            StyledText {
-                                                anchors.centerIn: parent
-                                                text: isSelected ? "Active" : "Select"
-                                                font.pixelSize: Theme.fontSizeSmall - 1
-                                                font.weight: isSelected ? Font.Bold : Font.Normal
-                                                color: isSelected ? Theme.onPrimary : Theme.surfaceText
-                                            }
-                                        }
-                                    }
-
-                                    MouseArea {
-                                        anchors.fill: parent
-                                        onClicked: {
-                                            root.selectedNetId = itemIfName;
-                                            root.netRxHistory = [0, 0, 0, 0, 0];
-                                            root.netTxHistory = [0, 0, 0, 0, 0];
-                                            root.fetchSelectedNetDetail(itemIfName);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        Rectangle {
-                            Layout.fillWidth: true
-                            height: 1
-                            color: Theme.surfaceContainerHighest
-                        }
-
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            spacing: Theme.spacingS
-
-                            StyledText {
-                                text: "Containers"
-                                font.pixelSize: Theme.fontSizeLarge
-                                font.weight: Font.Bold
-                                color: Theme.surfaceText
-                            }
-
-                            StyledText {
-                                text: `Podman Containers (${root.containerList.length})`
-                                font.pixelSize: Theme.fontSizeMedium
-                                font.weight: Font.Bold
-                                color: Theme.surfaceText
-                            }
-
-                            ListView {
-                                Layout.fillWidth: true
-                                implicitHeight: Math.min(260, Math.max(60, root.containerList.length * (isExpanded ? 120 : 62)))
-                                clip: true
-                                model: root.containerList
-                                spacing: Theme.spacingS
-
-                                delegate: StyledRect {
-                                    width: ListView.view.width
-                                    height: isExpanded ? 115 : 58
-                                    radius: Theme.cornerRadius
-                                    color: modelData.status === "running" ? Theme.surfaceContainerHigh : Theme.surfaceContainer
-
-                                    property string cId: modelData.id || ""
-                                    property bool isExpanded: root.expandedContainerId === cId
+                                    color: Theme.surfaceContainerHighest
 
                                     ColumnLayout {
                                         anchors.fill: parent
@@ -1441,142 +1078,490 @@ PluginComponent {
 
                                         RowLayout {
                                             Layout.fillWidth: true
-                                            spacing: Theme.spacingS
-
-                                            DankIcon {
-                                                name: modelData.status === "running" ? "play_circle" : "error"
-                                                color: modelData.status === "running" ? Theme.primary : Theme.error
+                                            DankIcon { name: "info"; color: root.getStorageColor(root.selectedSubvolData.percent || 0) }
+                                            StyledText {
+                                                text: `Selected Subvolume: ${root.selectedSubvolData.name || root.selectedSubvolName || "root"}`
+                                                font.pixelSize: Theme.fontSizeMedium
+                                                font.weight: Font.Bold
+                                                color: Theme.surfaceText
                                             }
-
-                                            ColumnLayout {
-                                                spacing: 1
-                                                Layout.fillWidth: true
-
-                                                StyledText {
-                                                    text: modelData.name || cId || "Container"
-                                                    font.pixelSize: Theme.fontSizeMedium
-                                                    color: Theme.surfaceText
-                                                    font.weight: Font.Bold
-                                                    elide: Text.ElideRight
-                                                }
-
-                                                StyledText {
-                                                    text: `${modelData.image || "image"} • ${modelData.memory_usage || "N/A"}`
-                                                    font.pixelSize: Theme.fontSizeSmall
-                                                    color: Theme.surfaceVariantText
-                                                    elide: Text.ElideRight
-                                                }
-                                            }
-
-                                            DankButton {
-                                                iconName: isExpanded ? "expand_less" : "expand_more"
-                                                backgroundColor: Theme.surfaceContainerHighest
-                                                textColor: Theme.surfaceText
-                                                onClicked: {
-                                                    if (isExpanded) {
-                                                        root.expandedContainerId = "";
-                                                    } else {
-                                                        root.expandedContainerId = cId;
-                                                        root.expandedContainerCpu = 0;
-                                                        root.expandedContainerHistory = [0, 0, 0, 0, 0];
-                                                        root.fetchContainerCpu(cId);
-                                                    }
-                                                }
-                                            }
-
-                                            DankButton {
-                                                iconName: "content_copy"
-                                                backgroundColor: Theme.surfaceContainerHighest
-                                                textColor: Theme.surfaceText
-                                                onClicked: root.copyContainerId(cId)
-                                            }
-
-                                            DankButton {
-                                                iconName: "restart_alt"
-                                                backgroundColor: Theme.surfaceContainerHighest
-                                                textColor: Theme.surfaceText
-                                                onClicked: root.restartContainer(cId)
-                                            }
-
-                                            DankButton {
-                                                iconName: "stop"
-                                                backgroundColor: Theme.surfaceContainerHighest
-                                                textColor: Theme.surfaceText
-                                                onClicked: root.stopContainer(cId)
+                                            Item { Layout.fillWidth: true }
+                                            StyledText {
+                                                text: `${(root.selectedSubvolData.percent || 0).toFixed(1)}%`
+                                                font.pixelSize: Theme.fontSizeMedium
+                                                font.weight: Font.Bold
+                                                color: root.getStorageColor(root.selectedSubvolData.percent || 0)
                                             }
                                         }
 
+                                        StyledText {
+                                            text: `Mount Point: ${root.selectedSubvolData.mount || "/"}`
+                                            font.pixelSize: Theme.fontSizeSmall
+                                            color: Theme.surfaceVariantText
+                                            elide: Text.ElideRight
+                                        }
+
+                                        StyledText {
+                                            text: `Used Capacity: ${root.bytesToGb(root.selectedSubvolData.used_bytes)}`
+                                            font.pixelSize: Theme.fontSizeSmall
+                                            color: root.getStorageColor(root.selectedSubvolData.percent || 0)
+                                            font.weight: Font.Bold
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        StyledRect {
+                            Layout.fillWidth: true
+                            implicitHeight: netCol.implicitHeight + Theme.spacingM * 2
+                            radius: Theme.cornerRadius
+                            color: Theme.surfaceContainerHigh
+
+                            ColumnLayout {
+                                id: netCol
+                                anchors.fill: parent
+                                anchors.margins: Theme.spacingM
+                                spacing: Theme.spacingS
+
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    DankIcon { name: "lan"; color: Theme.primary }
+                                    StyledText {
+                                        text: "Network"
+                                        font.pixelSize: Theme.fontSizeLarge
+                                        font.weight: Font.Bold
+                                        color: Theme.surfaceText
+                                    }
+                                }
+
+                                RowLayout {
+                                    Layout.fillWidth: true
+
+                                    DankIcon { name: "lan"; color: Theme.primary }
+
+                                    ColumnLayout {
+                                        spacing: 1
+                                        StyledText {
+                                            text: `Interface: ${root.selectedNetId} (IP: ${root.getIpString(root.selectedNetData)})`
+                                            font.pixelSize: Theme.fontSizeSmall
+                                            font.weight: Font.Bold
+                                            color: Theme.surfaceText
+                                        }
+                                        StyledText {
+                                            text: `RX Rate: ${root.getRxRateString(root.selectedNetData)}  |  TX Rate: ${root.getTxRateString(root.selectedNetData)}`
+                                            font.pixelSize: Theme.fontSizeSmall - 1
+                                            color: Theme.surfaceVariantText
+                                        }
+                                    }
+                                }
+
+                                Item {
+                                    visible: root.enableGraphs
+                                    Layout.fillWidth: true
+                                    implicitHeight: 65
+
+                                    property int hoverIndex: -1
+                                    property real hoverX: 0
+                                    property real hoverY: 0
+                                    property string hoverText: ""
+
+                                    Canvas {
+                                        id: netCanvas
+                                        anchors.fill: parent
+                                        onPaint: {
+                                            var ctx = getContext("2d");
+                                            ctx.clearRect(0, 0, width, height);
+
+                                            var h = height - 12;
+                                            var w = width - 40;
+                                            var x0 = 36;
+
+                                            var maxRx = 1;
+                                            for (var i = 0; i < root.netRxHistory.length; i++) {
+                                                if (root.netRxHistory[i] > maxRx) maxRx = root.netRxHistory[i];
+                                            }
+
+                                            ctx.beginPath();
+                                            ctx.lineWidth = 1;
+                                            ctx.strokeStyle = Theme.surfaceContainerHighest;
+                                            ctx.moveTo(x0, 2);
+                                            ctx.lineTo(x0 + w, 2);
+                                            ctx.moveTo(x0, h / 2 + 2);
+                                            ctx.lineTo(x0 + w, h / 2 + 2);
+                                            ctx.moveTo(x0, h + 2);
+                                            ctx.lineTo(x0 + w, h + 2);
+                                            ctx.stroke();
+
+                                            ctx.fillStyle = Theme.surfaceVariantText;
+                                            ctx.font = "8px sans-serif";
+                                            ctx.fillText(root.formatBytesRate(maxRx * 1024), 0, 8);
+                                            ctx.fillText(root.formatBytesRate((maxRx / 2) * 1024), 0, h / 2 + 5);
+                                            ctx.fillText("0 B/s", 0, h + 5);
+
+                                            if (!root.netRxHistory || root.netRxHistory.length < 2) return;
+
+                                            ctx.beginPath();
+                                            ctx.lineWidth = 2;
+                                            ctx.strokeStyle = Theme.primary;
+
+                                            var step = w / (root.netRxHistory.length - 1);
+                                            for (var j = 0; j < root.netRxHistory.length; j++) {
+                                                var val = root.netRxHistory[j] || 0;
+                                                var y = h - (val / maxRx * h) + 2;
+                                                var x = x0 + j * step;
+                                                if (j === 0) ctx.moveTo(x, y);
+                                                else ctx.lineTo(x, y);
+                                            }
+                                            ctx.stroke();
+
+                                            if (parent.hoverIndex >= 0 && parent.hoverIndex < root.netRxHistory.length) {
+                                                var hx = x0 + parent.hoverIndex * step;
+                                                var hval = root.netRxHistory[parent.hoverIndex] || 0;
+                                                var hy = h - (hval / maxRx * h) + 2;
+
+                                                ctx.beginPath();
+                                                ctx.lineWidth = 1;
+                                                ctx.strokeStyle = Theme.primary;
+                                                ctx.moveTo(hx, 0);
+                                                ctx.lineTo(hx, h + 4);
+                                                ctx.stroke();
+
+                                                ctx.beginPath();
+                                                ctx.arc(hx, hy, 4, 0, 2 * Math.PI);
+                                                ctx.fillStyle = Theme.primary;
+                                                ctx.fill();
+                                            }
+                                        }
+
+                                        Connections {
+                                            target: root
+                                            function onNetRxHistoryChanged() {
+                                                if (root.enableGraphs) netCanvas.requestPaint();
+                                            }
+                                        }
+                                    }
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        onPositionChanged: (mouse) => {
+                                            var w = width - 40;
+                                            var x0 = 36;
+                                            if (mouse.x >= x0 && mouse.x <= x0 + w && root.netRxHistory.length > 1) {
+                                                var step = w / (root.netRxHistory.length - 1);
+                                                var idx = Math.round((mouse.x - x0) / step);
+                                                idx = Math.max(0, Math.min(root.netRxHistory.length - 1, idx));
+                                                parent.hoverIndex = idx;
+                                                parent.hoverX = x0 + idx * step;
+                                                var valKb = root.netRxHistory[idx] || 0;
+                                                var maxRx = 1;
+                                                for (var i = 0; i < root.netRxHistory.length; i++) {
+                                                    if (root.netRxHistory[i] > maxRx) maxRx = root.netRxHistory[i];
+                                                }
+                                                parent.hoverY = (height - 12) - (valKb / maxRx * (height - 12)) + 2;
+                                                parent.hoverText = `RX: ${root.formatBytesRate(valKb * 1024)}`;
+                                            } else {
+                                                parent.hoverIndex = -1;
+                                            }
+                                            netCanvas.requestPaint();
+                                        }
+                                        onExited: {
+                                            parent.hoverIndex = -1;
+                                            netCanvas.requestPaint();
+                                        }
+                                    }
+
+                                    StyledRect {
+                                        visible: parent.hoverIndex >= 0
+                                        x: Math.min(parent.width - width - 4, Math.max(4, parent.hoverX - width / 2))
+                                        y: Math.max(0, parent.hoverY - 24)
+                                        width: netHoverLabel.implicitWidth + 12
+                                        height: 20
+                                        radius: Theme.cornerRadiusSmall
+                                        color: Theme.surfaceContainerHighest
+                                        border.color: Theme.primary
+                                        border.width: 1
+
+                                        StyledText {
+                                            id: netHoverLabel
+                                            anchors.centerIn: parent
+                                            text: parent.parent.hoverText
+                                            font.pixelSize: Theme.fontSizeSmall - 1
+                                            font.weight: Font.Bold
+                                            color: Theme.primary
+                                        }
+                                    }
+                                }
+
+                                StyledText {
+                                    text: `Select Interface to Graph (${root.getAllInterfacesList().length})`
+                                    font.pixelSize: Theme.fontSizeMedium
+                                    font.weight: Font.Bold
+                                    color: Theme.surfaceText
+                                }
+
+                                DankTextField {
+                                    Layout.fillWidth: true
+                                    placeholderText: "Filter physical & virtual interfaces..."
+                                    text: root.virtualNetQuery
+                                    onTextChanged: root.virtualNetQuery = text
+                                }
+
+                                ListView {
+                                    Layout.fillWidth: true
+                                    implicitHeight: Math.min(150, Math.max(45, root.getAllInterfacesList().length * 42))
+                                    clip: true
+                                    model: root.getAllInterfacesList()
+                                    spacing: Theme.spacingXS
+
+                                    delegate: StyledRect {
+                                        width: ListView.view.width
+                                        height: 38
+                                        radius: Theme.cornerRadiusSmall
+                                        color: isSelected ? Theme.surfaceContainerHighest : Theme.surfaceContainerHighest
+
+                                        property string itemIfName: modelData.name || `if${index}`
+                                        property bool isVirt: modelData.isVirtual
+                                        property bool isSelected: root.selectedNetId === itemIfName
+
+                                        RowLayout {
+                                            anchors.fill: parent
+                                            anchors.margins: Theme.spacingS
+
+                                            DankIcon {
+                                                name: isSelected ? "check_circle" : (isVirt ? "hub" : "lan")
+                                                color: isSelected ? Theme.primary : Theme.surfaceVariantText
+                                            }
+
+                                            StyledText {
+                                                text: `${itemIfName} ${isVirt ? "(Virtual)" : "(Physical)"}`
+                                                font.pixelSize: Theme.fontSizeSmall
+                                                font.weight: isSelected ? Font.Bold : Font.Normal
+                                                color: isSelected ? Theme.primary : Theme.surfaceText
+                                                Layout.fillWidth: true
+                                            }
+
+                                            StyledRect {
+                                                width: 60
+                                                height: 26
+                                                radius: Theme.cornerRadiusSmall
+                                                color: isSelected ? Theme.primary : Theme.surfaceContainerHighest
+
+                                                StyledText {
+                                                    anchors.centerIn: parent
+                                                    text: isSelected ? "Active" : "Select"
+                                                    font.pixelSize: Theme.fontSizeSmall - 1
+                                                    font.weight: isSelected ? Font.Bold : Font.Normal
+                                                    color: isSelected ? Theme.onPrimary : Theme.surfaceText
+                                                }
+                                            }
+                                        }
+
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            onClicked: {
+                                                root.selectedNetId = itemIfName;
+                                                root.netRxHistory = [0, 0, 0, 0, 0];
+                                                root.netTxHistory = [0, 0, 0, 0, 0];
+                                                root.fetchSelectedNetDetail(itemIfName);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        StyledRect {
+                            Layout.fillWidth: true
+                            implicitHeight: cntCol.implicitHeight + Theme.spacingM * 2
+                            radius: Theme.cornerRadius
+                            color: Theme.surfaceContainerHigh
+
+                            ColumnLayout {
+                                id: cntCol
+                                anchors.fill: parent
+                                anchors.margins: Theme.spacingM
+                                spacing: Theme.spacingS
+
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    DankIcon { name: "layers"; color: Theme.primary }
+                                    StyledText {
+                                        text: "Containers"
+                                        font.pixelSize: Theme.fontSizeLarge
+                                        font.weight: Font.Bold
+                                        color: Theme.surfaceText
+                                    }
+                                }
+
+                                StyledText {
+                                    text: `Podman Containers (${root.containerList.length})`
+                                    font.pixelSize: Theme.fontSizeMedium
+                                    font.weight: Font.Bold
+                                    color: Theme.surfaceText
+                                }
+
+                                ListView {
+                                    Layout.fillWidth: true
+                                    implicitHeight: Math.min(260, Math.max(60, root.containerList.length * (isExpanded ? 120 : 62)))
+                                    clip: true
+                                    model: root.containerList
+                                    spacing: Theme.spacingS
+
+                                    delegate: StyledRect {
+                                        width: ListView.view.width
+                                        height: isExpanded ? 115 : 58
+                                        radius: Theme.cornerRadiusSmall
+                                        color: modelData.status === "running" ? Theme.surfaceContainerHighest : Theme.surfaceContainer
+
+                                        property string cId: modelData.id || ""
+                                        property bool isExpanded: root.expandedContainerId === cId
+
                                         ColumnLayout {
-                                            visible: isExpanded
-                                            Layout.fillWidth: true
-                                            spacing: 2
+                                            anchors.fill: parent
+                                            anchors.margins: Theme.spacingS
+                                            spacing: Theme.spacingXS
 
                                             RowLayout {
                                                 Layout.fillWidth: true
-                                                StyledText {
-                                                    text: "Live CPU Usage:"
-                                                    font.pixelSize: Theme.fontSizeSmall
-                                                    color: Theme.surfaceText
+                                                spacing: Theme.spacingS
+
+                                                DankIcon {
+                                                    name: modelData.status === "running" ? "play_circle" : "error"
+                                                    color: modelData.status === "running" ? Theme.primary : Theme.error
                                                 }
 
-                                                StyledRect {
+                                                ColumnLayout {
+                                                    spacing: 1
                                                     Layout.fillWidth: true
-                                                    height: 6
-                                                    radius: 3
-                                                    color: Theme.surfaceContainerHighest
+
+                                                    StyledText {
+                                                        text: modelData.name || cId || "Container"
+                                                        font.pixelSize: Theme.fontSizeMedium
+                                                        color: Theme.surfaceText
+                                                        font.weight: Font.Bold
+                                                        elide: Text.ElideRight
+                                                    }
+
+                                                    StyledText {
+                                                        text: `${modelData.image || "image"} • ${modelData.memory_usage || "N/A"}`
+                                                        font.pixelSize: Theme.fontSizeSmall
+                                                        color: Theme.surfaceVariantText
+                                                        elide: Text.ElideRight
+                                                    }
+                                                }
+
+                                                DankButton {
+                                                    iconName: isExpanded ? "expand_less" : "expand_more"
+                                                    backgroundColor: Theme.surfaceContainerHigh
+                                                    textColor: Theme.surfaceText
+                                                    onClicked: {
+                                                        if (isExpanded) {
+                                                            root.expandedContainerId = "";
+                                                        } else {
+                                                            root.expandedContainerId = cId;
+                                                            root.expandedContainerCpu = 0;
+                                                            root.expandedContainerHistory = [0, 0, 0, 0, 0];
+                                                            root.fetchContainerCpu(cId);
+                                                        }
+                                                    }
+                                                }
+
+                                                DankButton {
+                                                    iconName: "content_copy"
+                                                    backgroundColor: Theme.surfaceContainerHigh
+                                                    textColor: Theme.surfaceText
+                                                    onClicked: root.copyContainerId(cId)
+                                                }
+
+                                                DankButton {
+                                                    iconName: "restart_alt"
+                                                    backgroundColor: Theme.surfaceContainerHigh
+                                                    textColor: Theme.surfaceText
+                                                    onClicked: root.restartContainer(cId)
+                                                }
+
+                                                DankButton {
+                                                    iconName: "stop"
+                                                    backgroundColor: Theme.surfaceContainerHigh
+                                                    textColor: Theme.surfaceText
+                                                    onClicked: root.stopContainer(cId)
+                                                }
+                                            }
+
+                                            ColumnLayout {
+                                                visible: isExpanded
+                                                Layout.fillWidth: true
+                                                spacing: 2
+
+                                                RowLayout {
+                                                    Layout.fillWidth: true
+                                                    StyledText {
+                                                        text: "Live CPU Usage:"
+                                                        font.pixelSize: Theme.fontSizeSmall
+                                                        color: Theme.surfaceText
+                                                    }
 
                                                     StyledRect {
-                                                        width: parent.width * Math.min(1.0, root.expandedContainerCpu / 100.0)
-                                                        height: parent.height
-                                                        radius: parent.radius
+                                                        Layout.fillWidth: true
+                                                        height: 6
+                                                        radius: 3
+                                                        color: Theme.surfaceContainerHighest
+
+                                                        StyledRect {
+                                                            width: parent.width * Math.min(1.0, root.expandedContainerCpu / 100.0)
+                                                            height: parent.height
+                                                            radius: parent.radius
+                                                            color: root.getMetricColor(root.expandedContainerCpu)
+                                                        }
+                                                    }
+
+                                                    StyledText {
+                                                        text: `${root.expandedContainerCpu.toFixed(1)}%`
+                                                        font.pixelSize: Theme.fontSizeSmall
+                                                        font.weight: Font.Bold
                                                         color: root.getMetricColor(root.expandedContainerCpu)
                                                     }
                                                 }
 
-                                                StyledText {
-                                                    text: `${root.expandedContainerCpu.toFixed(1)}%`
-                                                    font.pixelSize: Theme.fontSizeSmall
-                                                    font.weight: Font.Bold
-                                                    color: root.getMetricColor(root.expandedContainerCpu)
-                                                }
-                                            }
+                                                Canvas {
+                                                    visible: root.enableGraphs
+                                                    Layout.fillWidth: true
+                                                    implicitHeight: 25
+                                                    onPaint: {
+                                                        var ctx = getContext("2d");
+                                                        ctx.clearRect(0, 0, width, height);
 
-                                            Canvas {
-                                                visible: root.enableGraphs
-                                                Layout.fillWidth: true
-                                                implicitHeight: 25
-                                                onPaint: {
-                                                    var ctx = getContext("2d");
-                                                    ctx.clearRect(0, 0, width, height);
+                                                        ctx.beginPath();
+                                                        ctx.lineWidth = 1;
+                                                        ctx.strokeStyle = Theme.surfaceContainerHighest;
+                                                        ctx.moveTo(0, height - 2);
+                                                        ctx.lineTo(width, height - 2);
+                                                        ctx.stroke();
 
-                                                    ctx.beginPath();
-                                                    ctx.lineWidth = 1;
-                                                    ctx.strokeStyle = Theme.surfaceContainerHighest;
-                                                    ctx.moveTo(0, height - 2);
-                                                    ctx.lineTo(width, height - 2);
-                                                    ctx.stroke();
+                                                        if (!root.expandedContainerHistory || root.expandedContainerHistory.length < 2) return;
 
-                                                    if (!root.expandedContainerHistory || root.expandedContainerHistory.length < 2) return;
+                                                        ctx.beginPath();
+                                                        ctx.lineWidth = 2;
+                                                        ctx.strokeStyle = root.getMetricColor(root.expandedContainerCpu);
 
-                                                    ctx.beginPath();
-                                                    ctx.lineWidth = 2;
-                                                    ctx.strokeStyle = root.getMetricColor(root.expandedContainerCpu);
-
-                                                    var step = width / (root.expandedContainerHistory.length - 1);
-                                                    for (var i = 0; i < root.expandedContainerHistory.length; i++) {
-                                                        var val = root.expandedContainerHistory[i] || 0;
-                                                        var y = height - (val / 100.0 * (height - 4)) - 2;
-                                                        var x = i * step;
-                                                        if (i === 0) ctx.moveTo(x, y);
-                                                        else ctx.lineTo(x, y);
+                                                        var step = width / (root.expandedContainerHistory.length - 1);
+                                                        for (var i = 0; i < root.expandedContainerHistory.length; i++) {
+                                                            var val = root.expandedContainerHistory[i] || 0;
+                                                            var y = height - (val / 100.0 * (height - 4)) - 2;
+                                                            var x = i * step;
+                                                            if (i === 0) ctx.moveTo(x, y);
+                                                            else ctx.lineTo(x, y);
+                                                        }
+                                                        ctx.stroke();
                                                     }
-                                                    ctx.stroke();
-                                                }
 
-                                                Connections {
-                                                    target: root
-                                                    function onExpandedContainerHistoryChanged() {
-                                                        if (root.enableGraphs) parent.requestPaint();
+                                                    Connections {
+                                                        target: root
+                                                        function onExpandedContainerHistoryChanged() {
+                                                            if (root.enableGraphs) parent.requestPaint();
+                                                        }
                                                     }
                                                 }
                                             }

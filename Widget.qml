@@ -40,6 +40,12 @@ PluginComponent {
     property bool showAlertsDrawer: false
     property bool showServerDropdown: false
 
+    property bool showHostEditor: false
+    property int editingHostIndex: -1
+    property string inputHostName: ""
+    property string inputHostIp: ""
+    property string inputHostPort: "61208"
+
     property var sysInfo: ({})
     property var sysResources: ({
         "cpu": { "usage_percent": 0, "temp_c": 0 },
@@ -107,6 +113,62 @@ PluginComponent {
         running: root.selectedNetId !== "" && !root.isOffline
         repeat: true
         onTriggered: root.fetchSelectedNetDetail(root.selectedNetId)
+    }
+
+    function saveServersList(newList) {
+        root.serversList = newList;
+        if (root.activeServerIndex >= newList.length) {
+            root.activeServerIndex = Math.max(0, newList.length - 1);
+        }
+        var jsonStr = JSON.stringify(newList);
+        pluginData.serversConfig = jsonStr;
+        if (typeof PluginService !== "undefined" && PluginService) {
+            PluginService.savePluginData("vMonitorSRV", "serversConfig", jsonStr);
+        }
+    }
+
+    function openAddHost() {
+        root.editingHostIndex = -1;
+        root.inputHostName = "";
+        root.inputHostIp = "192.168.100.200";
+        root.inputHostPort = "61208";
+        root.showHostEditor = true;
+    }
+
+    function openEditHost(idx) {
+        if (idx < 0 || idx >= root.serversList.length) return;
+        var s = root.serversList[idx];
+        root.editingHostIndex = idx;
+        root.inputHostName = s.name || "";
+        root.inputHostIp = s.host || "";
+        root.inputHostPort = s.port || "61208";
+        root.showHostEditor = true;
+    }
+
+    function saveHostForm() {
+        if (!root.inputHostIp.trim()) return;
+        var list = root.serversList.slice();
+        var item = {
+            "name": root.inputHostName.trim() || root.inputHostIp.trim(),
+            "host": root.inputHostIp.trim(),
+            "port": root.inputHostPort.trim() || "61208"
+        };
+        if (root.editingHostIndex >= 0 && root.editingHostIndex < list.length) {
+            list[root.editingHostIndex] = item;
+        } else {
+            list.push(item);
+        }
+        saveServersList(list);
+        root.showHostEditor = false;
+        root.fetchAllData();
+    }
+
+    function deleteHost(idx) {
+        if (root.serversList.length <= 1) return;
+        var list = root.serversList.slice();
+        list.splice(idx, 1);
+        saveServersList(list);
+        root.fetchAllData();
     }
 
     function fetchAllData() {
@@ -441,7 +503,10 @@ PluginComponent {
                         textColor: root.showServerDropdown ? Theme.onPrimary : Theme.surfaceText
                         onClicked: {
                             root.showServerDropdown = !root.showServerDropdown;
-                            if (root.showServerDropdown) root.showAlertsDrawer = false;
+                            if (root.showServerDropdown) {
+                                root.showAlertsDrawer = false;
+                                root.showHostEditor = false;
+                            }
                         }
                     }
 
@@ -454,7 +519,10 @@ PluginComponent {
                         textColor: root.showAlertsDrawer ? Theme.surfaceContainer : Theme.surfaceText
                         onClicked: {
                             root.showAlertsDrawer = !root.showAlertsDrawer;
-                            if (root.showAlertsDrawer) root.showServerDropdown = false;
+                            if (root.showAlertsDrawer) {
+                                root.showServerDropdown = false;
+                                root.showHostEditor = false;
+                            }
                         }
                     }
 
@@ -480,7 +548,7 @@ PluginComponent {
                 StyledRect {
                     visible: root.showServerDropdown
                     Layout.fillWidth: true
-                    implicitHeight: 120
+                    implicitHeight: root.showHostEditor ? 190 : 160
                     radius: Theme.cornerRadius
                     color: Theme.surfaceContainerHighest
 
@@ -489,14 +557,74 @@ PluginComponent {
                         anchors.margins: Theme.spacingM
                         spacing: Theme.spacingS
 
-                        StyledText {
-                            text: "Select Monitored Server"
-                            font.pixelSize: Theme.fontSizeMedium
-                            font.weight: Font.Bold
-                            color: Theme.primary
+                        RowLayout {
+                            Layout.fillWidth: true
+                            StyledText {
+                                text: root.showHostEditor ? (root.editingHostIndex >= 0 ? "Edit Host Server" : "Add Host Server") : "Manage Server Connections"
+                                font.pixelSize: Theme.fontSizeMedium
+                                font.weight: Font.Bold
+                                color: Theme.primary
+                            }
+                            Item { Layout.fillWidth: true }
+                            DankButton {
+                                visible: !root.showHostEditor
+                                text: "+ Add Host"
+                                backgroundColor: Theme.primary
+                                textColor: Theme.onPrimary
+                                onClicked: root.openAddHost()
+                            }
+                        }
+
+                        ColumnLayout {
+                            visible: root.showHostEditor
+                            Layout.fillWidth: true
+                            spacing: Theme.spacingXS
+
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: Theme.spacingS
+                                DankTextField {
+                                    Layout.fillWidth: true
+                                    placeholderText: "Host Name (e.g. Fedora Main)"
+                                    text: root.inputHostName
+                                    onTextChanged: root.inputHostName = text
+                                }
+                                DankTextField {
+                                    width: 130
+                                    placeholderText: "Port (61208)"
+                                    text: root.inputHostPort
+                                    onTextChanged: root.inputHostPort = text
+                                }
+                            }
+
+                            DankTextField {
+                                Layout.fillWidth: true
+                                placeholderText: "IP Address / Host (e.g. 192.168.100.200)"
+                                text: root.inputHostIp
+                                onTextChanged: root.inputHostIp = text
+                            }
+
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: Theme.spacingS
+                                Item { Layout.fillWidth: true }
+                                DankButton {
+                                    text: "Cancel"
+                                    backgroundColor: Theme.surfaceContainerHigh
+                                    textColor: Theme.surfaceText
+                                    onClicked: root.showHostEditor = false
+                                }
+                                DankButton {
+                                    text: "Save Host"
+                                    backgroundColor: Theme.primary
+                                    textColor: Theme.onPrimary
+                                    onClicked: root.saveHostForm()
+                                }
+                            }
                         }
 
                         ListView {
+                            visible: !root.showHostEditor
                             Layout.fillWidth: true
                             Layout.fillHeight: true
                             clip: true
@@ -504,13 +632,20 @@ PluginComponent {
                             spacing: Theme.spacingXS
                             delegate: StyledRect {
                                 width: ListView.view.width
-                                height: 34
+                                height: 38
                                 radius: Theme.cornerRadiusSmall
                                 color: index === root.activeServerIndex ? Theme.primary : Theme.surfaceContainerHigh
 
                                 RowLayout {
                                     anchors.fill: parent
                                     anchors.margins: Theme.spacingS
+                                    spacing: Theme.spacingS
+
+                                    DankIcon {
+                                        name: index === root.activeServerIndex ? "dns" : "server"
+                                        color: index === root.activeServerIndex ? Theme.onPrimary : Theme.surfaceVariantText
+                                    }
+
                                     StyledText {
                                         text: `${modelData.name || modelData.host} (${modelData.host}:${modelData.port || "61208"})`
                                         font.pixelSize: Theme.fontSizeSmall
@@ -518,6 +653,21 @@ PluginComponent {
                                         color: index === root.activeServerIndex ? Theme.onPrimary : Theme.surfaceText
                                         Layout.fillWidth: true
                                         elide: Text.ElideRight
+                                    }
+
+                                    DankButton {
+                                        iconName: "edit"
+                                        backgroundColor: Theme.surfaceContainerHighest
+                                        textColor: Theme.surfaceText
+                                        onClicked: root.openEditHost(index)
+                                    }
+
+                                    DankButton {
+                                        visible: root.serversList.length > 1
+                                        iconName: "delete"
+                                        backgroundColor: Theme.surfaceContainerHighest
+                                        textColor: Theme.error
+                                        onClicked: root.deleteHost(index)
                                     }
                                 }
 

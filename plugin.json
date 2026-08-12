@@ -1,0 +1,25 @@
+{
+  "id": "vMonitorSRV",
+  "name": "VMonitorSRV",
+  "description": "Live monitoring of CPU, RAM, Btrfs, Network and Podman Containers via Bottle API",
+  "version": "1.0.0",
+  "author": "JessVolet",
+  "icon": "server",
+  "type": "composite",
+  "capabilities": [
+    "dankbar-widget",
+    "desktop-widget"
+  ],
+  "components": {
+    "widget": "./Widget.qml",
+    "desktop": "./Desktop.qml"
+  },
+  "settings": "./Settings.qml",
+  "startupCheck": "./StartupCheck.qml",
+  "requires_dms": ">=1.5.0",
+  "permissions": [
+    "network",
+    "settings_read",
+    "settings_write"
+  ]
+}

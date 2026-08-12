@@ -421,10 +421,13 @@ PluginComponent {
             spacing: Theme.spacingS
             anchors.verticalCenter: parent.verticalCenter
 
-            DankIcon {
-                name: "dns"
-                size: root.iconSize
-                color: root.isOffline ? Theme.error : "#22c55e"
+            Image {
+                source: "./VMonitorSRV.svg"
+                sourceSize.width: root.iconSize || 18
+                sourceSize.height: root.iconSize || 18
+                width: root.iconSize || 18
+                height: root.iconSize || 18
+                fillMode: Image.PreserveAspectFit
                 anchors.verticalCenter: parent.verticalCenter
             }
 
@@ -442,10 +445,13 @@ PluginComponent {
             spacing: Theme.spacingXS
             anchors.centerIn: parent
 
-            DankIcon {
-                name: "dns"
-                size: root.iconSize
-                color: root.isOffline ? Theme.error : "#22c55e"
+            Image {
+                source: "./VMonitorSRV.svg"
+                sourceSize.width: root.iconSize || 18
+                sourceSize.height: root.iconSize || 18
+                width: root.iconSize || 18
+                height: root.iconSize || 18
+                fillMode: Image.PreserveAspectFit
                 anchors.horizontalCenter: parent.horizontalCenter
             }
 
@@ -469,49 +475,58 @@ PluginComponent {
                 width: parent.width
                 spacing: Theme.spacingM
 
-                RowLayout {
+                StyledRect {
                     Layout.fillWidth: true
                     Layout.leftMargin: Theme.spacingM
                     Layout.rightMargin: Theme.spacingM
-                    spacing: Theme.spacingS
+                    implicitHeight: topBarRow.implicitHeight + Theme.spacingS * 2
+                    radius: Theme.cornerRadius
+                    color: Theme.surfaceContainerHigh
 
-                    DankButton {
-                        text: `${root.currentServerObj.name || root.currentServerObj.host} ▼`
-                        backgroundColor: root.showServerDropdown ? Theme.primary : Theme.surfaceContainerHighest
-                        textColor: root.showServerDropdown ? Theme.onPrimary : Theme.surfaceText
-                        onClicked: {
-                            root.showServerDropdown = !root.showServerDropdown;
-                            if (root.showServerDropdown) root.showAlertsDrawer = false;
+                    RowLayout {
+                        id: topBarRow
+                        anchors.fill: parent
+                        anchors.margins: Theme.spacingS
+                        spacing: Theme.spacingS
+
+                        DankButton {
+                            text: `${root.currentServerObj.name || root.currentServerObj.host} ▼`
+                            backgroundColor: root.showServerDropdown ? Theme.primary : Theme.surfaceContainerHighest
+                            textColor: root.showServerDropdown ? Theme.onPrimary : Theme.surfaceText
+                            onClicked: {
+                                root.showServerDropdown = !root.showServerDropdown;
+                                if (root.showServerDropdown) root.showAlertsDrawer = false;
+                            }
                         }
-                    }
 
-                    Item { Layout.fillWidth: true }
+                        Item { Layout.fillWidth: true }
 
-                    DankButton {
-                        iconName: "warning"
-                        text: `Alerts: ${root.crossServerAlerts.length}`
-                        backgroundColor: root.showAlertsDrawer ? "#f59e0b" : Theme.surfaceContainerHighest
-                        textColor: root.showAlertsDrawer ? Theme.surfaceContainer : Theme.surfaceText
-                        onClicked: {
-                            root.showAlertsDrawer = !root.showAlertsDrawer;
-                            if (root.showAlertsDrawer) root.showServerDropdown = false;
+                        DankButton {
+                            iconName: "warning"
+                            text: `Alerts: ${root.crossServerAlerts.length}`
+                            backgroundColor: root.showAlertsDrawer ? "#f59e0b" : Theme.surfaceContainerHighest
+                            textColor: root.showAlertsDrawer ? Theme.surfaceContainer : Theme.surfaceText
+                            onClicked: {
+                                root.showAlertsDrawer = !root.showAlertsDrawer;
+                                if (root.showAlertsDrawer) root.showServerDropdown = false;
+                            }
                         }
-                    }
 
-                    DankButton {
-                        iconName: "refresh"
-                        backgroundColor: Theme.surfaceContainerHighest
-                        textColor: Theme.surfaceText
-                        onClicked: root.fetchAllData()
-                    }
+                        DankButton {
+                            iconName: "refresh"
+                            backgroundColor: Theme.surfaceContainerHighest
+                            textColor: Theme.surfaceText
+                            onClicked: root.fetchAllData()
+                        }
 
-                    DankButton {
-                        iconName: "settings"
-                        backgroundColor: Theme.surfaceContainerHighest
-                        textColor: Theme.surfaceText
-                        onClicked: {
-                            if (typeof PopoutService !== "undefined" && PopoutService) {
-                                PopoutService.showPluginSettings("vMonitorSRV");
+                        DankButton {
+                            iconName: "settings"
+                            backgroundColor: Theme.surfaceContainerHighest
+                            textColor: Theme.surfaceText
+                            onClicked: {
+                                if (typeof PopoutService !== "undefined" && PopoutService) {
+                                    PopoutService.showPluginSettings("vMonitorSRV");
+                                }
                             }
                         }
                     }

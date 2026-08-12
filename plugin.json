@@ -4,7 +4,7 @@
   "description": "Live monitoring of CPU, RAM, Btrfs, Network and Podman Containers via Bottle API",
   "version": "1.0.0",
   "author": "JessVolet",
-  "icon": "dns",
+  "icon": "./VMonitorSRV.svg",
   "type": "composite",
   "capabilities": [
     "dankbar-widget",

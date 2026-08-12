@@ -13,8 +13,6 @@ StyledRect {
     signal openHostsFile()
 
     Layout.fillWidth: true
-    Layout.leftMargin: Theme.spacingM
-    Layout.rightMargin: Theme.spacingM
     implicitHeight: Math.max(120, Math.min(220, root.serversList.length * 44 + 50))
     radius: Theme.cornerRadius
     color: Theme.surfaceContainerHighest

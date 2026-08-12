@@ -461,6 +461,7 @@ PluginComponent {
                 spacing: Theme.spacingM
 
                 HeaderCard {
+                    Layout.fillWidth: true
                     currentServerObj: root.currentServerObj
                     isOffline: root.isOffline
                     sysInfo: root.sysInfo
@@ -485,6 +486,7 @@ PluginComponent {
 
                 ServerSelectorDrawer {
                     visible: root.showServerDropdown
+                    Layout.fillWidth: true
                     serversList: root.serversList
                     activeServerIndex: root.activeServerIndex
                     onServerSelected: (index) => {
@@ -501,13 +503,12 @@ PluginComponent {
 
                 AlertsDrawer {
                     visible: root.showAlertsDrawer
+                    Layout.fillWidth: true
                     crossServerAlerts: root.crossServerAlerts
                 }
 
                 Flickable {
                     Layout.fillWidth: true
-                    Layout.leftMargin: Theme.spacingM
-                    Layout.rightMargin: Theme.spacingM
                     implicitHeight: 480
                     height: 480
                     contentHeight: mainContent.implicitHeight

@@ -19,8 +19,6 @@ StyledRect {
     signal settingsClicked()
 
     Layout.fillWidth: true
-    Layout.leftMargin: Theme.spacingM
-    Layout.rightMargin: Theme.spacingM
     implicitHeight: headerCol.implicitHeight + Theme.spacingS * 2
     radius: Theme.cornerRadius
     color: Theme.surfaceContainerHigh

@@ -9,9 +9,7 @@ StyledRect {
     property var crossServerAlerts: []
 
     Layout.fillWidth: true
-    Layout.leftMargin: Theme.spacingM
-    Layout.rightMargin: Theme.spacingM
-    implicitHeight: 120
+    implicitHeight: Math.max(100, Math.min(200, root.crossServerAlerts.length * 40 + 50))
     radius: Theme.cornerRadius
     color: Theme.surfaceContainerHighest
 
@@ -21,33 +19,38 @@ StyledRect {
         spacing: Theme.spacingS
 
         StyledText {
-            text: "Active Alerts across Connected Servers"
+            text: "Cross-Server Active Alerts"
             font.pixelSize: Theme.fontSizeMedium
             font.weight: Font.Bold
-            color: Theme.primary
+            color: Theme.error
         }
 
         ListView {
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
-            model: root.crossServerAlerts.length > 0 ? root.crossServerAlerts : [{ "serverName": "System", "log": "No active alerts across servers" }]
+            model: root.crossServerAlerts
             spacing: Theme.spacingXS
-            delegate: RowLayout {
+            delegate: StyledRect {
                 width: ListView.view.width
-                spacing: Theme.spacingS
-                StyledText {
-                    text: `[${modelData.serverName || "Server"}]`
-                    font.pixelSize: Theme.fontSizeSmall
-                    font.weight: Font.Bold
-                    color: "#f59e0b"
-                }
-                StyledText {
-                    text: modelData.log || "Normal"
-                    font.pixelSize: Theme.fontSizeSmall
-                    color: Theme.surfaceText
-                    elide: Text.ElideRight
-                    Layout.fillWidth: true
+                height: 34
+                radius: Theme.cornerRadiusSmall
+                color: Theme.surfaceContainerHigh
+
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.margins: Theme.spacingS
+                    spacing: Theme.spacingS
+
+                    DankIcon { name: "warning"; color: Theme.error }
+
+                    StyledText {
+                        text: modelData.log || `${modelData.serverName}: ${modelData.count} alert(s)`
+                        font.pixelSize: Theme.fontSizeSmall
+                        color: Theme.surfaceText
+                        Layout.fillWidth: true
+                        elide: Text.ElideRight
+                    }
                 }
             }
         }

@@ -11,7 +11,7 @@ PluginComponent {
 
     layerNamespacePlugin: "vmonitor-srv"
     popoutWidth: 460
-    popoutHeight: 620
+    popoutHeight: 640
 
     property bool enableGraphs: pluginData.enableGraphs !== false
     property int intervalSecs: Math.max(1, pluginData.refreshInterval || 2)
@@ -54,17 +54,17 @@ PluginComponent {
 
     property var crossServerAlerts: []
 
-    property var cpuHistory: []
-    property var ramHistory: []
-    property var netRxHistory: []
-    property var netTxHistory: []
+    property var cpuHistory: [0, 0, 0, 0, 0]
+    property var ramHistory: [0, 0, 0, 0, 0]
+    property var netRxHistory: [0, 0, 0, 0, 0]
+    property var netTxHistory: [0, 0, 0, 0, 0]
 
     property string selectedNetId: "eno1"
     property var selectedNetData: ({ "name": "eno1", "rx_rate": "0 B/s", "tx_rate": "0 B/s", "ip": "192.168.100.200", "state": "UP" })
 
     property string expandedContainerId: ""
     property real expandedContainerCpu: 0
-    property var expandedContainerHistory: []
+    property var expandedContainerHistory: [0, 0, 0, 0, 0]
 
     property string expandedSubvolName: ""
     property string virtualNetQuery: ""
@@ -113,7 +113,7 @@ PluginComponent {
     }
 
     function pushHistory(arr, val, maxLen) {
-        var newArr = arr.slice();
+        var newArr = (arr || []).slice();
         newArr.push(val);
         if (newArr.length > (maxLen || 20)) newArr.shift();
         return newArr;
@@ -399,9 +399,12 @@ PluginComponent {
 
                     DankButton {
                         text: `${root.currentServerObj.name || root.currentServerObj.host} ▼`
-                        backgroundColor: Theme.surfaceContainer
-                        textColor: Theme.surfaceText
-                        onClicked: root.showServerDropdown = !root.showServerDropdown
+                        backgroundColor: root.showServerDropdown ? Theme.primary : Theme.surfaceContainer
+                        textColor: root.showServerDropdown ? Theme.onPrimary : Theme.surfaceText
+                        onClicked: {
+                            root.showServerDropdown = !root.showServerDropdown;
+                            if (root.showServerDropdown) root.showAlertsDrawer = false;
+                        }
                     }
 
                     Item { Layout.fillWidth: true }
@@ -409,9 +412,12 @@ PluginComponent {
                     DankButton {
                         iconName: "warning"
                         text: `Alerts: ${root.crossServerAlerts.length}`
-                        backgroundColor: root.crossServerAlerts.length > 0 ? "#f59e0b" : Theme.surfaceContainer
-                        textColor: root.crossServerAlerts.length > 0 ? "#111" : Theme.surfaceText
-                        onClicked: root.showAlertsDrawer = !root.showAlertsDrawer
+                        backgroundColor: root.showAlertsDrawer ? "#f59e0b" : Theme.surfaceContainer
+                        textColor: root.showAlertsDrawer ? "#111" : Theme.surfaceText
+                        onClicked: {
+                            root.showAlertsDrawer = !root.showAlertsDrawer;
+                            if (root.showAlertsDrawer) root.showServerDropdown = false;
+                        }
                     }
 
                     DankButton {
@@ -432,13 +438,14 @@ PluginComponent {
                 StyledRect {
                     visible: root.showServerDropdown
                     Layout.fillWidth: true
-                    implicitHeight: Math.min(130, root.serversList.length * 40 + 10)
+                    implicitHeight: 120
                     radius: Theme.cornerRadius
                     color: Theme.surfaceContainerHighest
 
                     ColumnLayout {
                         anchors.fill: parent
-                        anchors.margins: Theme.spacingS
+                        anchors.margins: Theme.spacingM
+                        spacing: Theme.spacingS
 
                         StyledText {
                             text: "Select Server Connection:"
@@ -452,9 +459,10 @@ PluginComponent {
                             Layout.fillHeight: true
                             clip: true
                             model: root.serversList
+                            spacing: Theme.spacingXS
                             delegate: StyledRect {
                                 width: ListView.view.width
-                                height: 34
+                                height: 32
                                 radius: Theme.cornerRadiusSmall
                                 color: index === root.activeServerIndex ? Theme.primary : Theme.surfaceContainerHigh
 
@@ -467,6 +475,7 @@ PluginComponent {
                                         font.weight: index === root.activeServerIndex ? Font.Bold : Font.Normal
                                         color: index === root.activeServerIndex ? Theme.onPrimary : Theme.surfaceText
                                         Layout.fillWidth: true
+                                        elide: Text.ElideRight
                                     }
                                 }
 
@@ -475,10 +484,10 @@ PluginComponent {
                                     onClicked: {
                                         root.activeServerIndex = index;
                                         root.showServerDropdown = false;
-                                        root.cpuHistory = [];
-                                        root.ramHistory = [];
-                                        root.netRxHistory = [];
-                                        root.netTxHistory = [];
+                                        root.cpuHistory = [0, 0, 0, 0, 0];
+                                        root.ramHistory = [0, 0, 0, 0, 0];
+                                        root.netRxHistory = [0, 0, 0, 0, 0];
+                                        root.netTxHistory = [0, 0, 0, 0, 0];
                                         root.fetchAllData();
                                     }
                                 }
@@ -490,16 +499,17 @@ PluginComponent {
                 StyledRect {
                     visible: root.showAlertsDrawer
                     Layout.fillWidth: true
-                    implicitHeight: Math.min(120, Math.max(40, root.crossServerAlerts.length * 45))
+                    implicitHeight: 120
                     radius: Theme.cornerRadius
-                    color: "#332211"
+                    color: "#2d1f1f"
 
                     ColumnLayout {
                         anchors.fill: parent
-                        anchors.margins: Theme.spacingS
+                        anchors.margins: Theme.spacingM
+                        spacing: Theme.spacingS
 
                         StyledText {
-                            text: "Cross-Server Active Alerts"
+                            text: "Active Alerts across Connected Servers:"
                             font.pixelSize: Theme.fontSizeSmall
                             font.weight: Font.Bold
                             color: "#f59e0b"
@@ -509,19 +519,20 @@ PluginComponent {
                             Layout.fillWidth: true
                             Layout.fillHeight: true
                             clip: true
-                            model: root.crossServerAlerts
+                            model: root.crossServerAlerts.length > 0 ? root.crossServerAlerts : [{ "serverName": "System", "log": "No active alerts across servers" }]
+                            spacing: Theme.spacingXS
                             delegate: RowLayout {
-                                width: parent.width
+                                width: ListView.view.width
                                 spacing: Theme.spacingS
                                 StyledText {
-                                    text: `[${modelData.serverName}]`
-                                    font.pixelSize: Theme.fontSizeSmall - 1
+                                    text: `[${modelData.serverName || "Server"}]`
+                                    font.pixelSize: Theme.fontSizeSmall
                                     font.weight: Font.Bold
                                     color: "#f59e0b"
                                 }
                                 StyledText {
-                                    text: modelData.log
-                                    font.pixelSize: Theme.fontSizeSmall - 1
+                                    text: modelData.log || "Normal"
+                                    font.pixelSize: Theme.fontSizeSmall
                                     color: Theme.surfaceText
                                     elide: Text.ElideRight
                                     Layout.fillWidth: true
@@ -545,27 +556,49 @@ PluginComponent {
 
                         StyledRect {
                             Layout.fillWidth: true
-                            implicitHeight: 68
+                            implicitHeight: 155
                             radius: Theme.cornerRadius
                             color: Theme.surfaceContainerHigh
 
                             ColumnLayout {
                                 anchors.fill: parent
                                 anchors.margins: Theme.spacingM
-                                spacing: 2
+                                spacing: Theme.spacingS
 
-                                StyledText {
-                                    text: root.sysInfo.hostname || root.currentServerObj.name || "Fedora Server"
-                                    font.pixelSize: Theme.fontSizeMedium
-                                    font.weight: Font.Bold
-                                    color: Theme.surfaceText
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    StyledText {
+                                        text: root.sysInfo.hostname || root.currentServerObj.name || "server"
+                                        font.pixelSize: Theme.fontSizeMedium
+                                        font.weight: Font.Bold
+                                        color: Theme.primary
+                                    }
+                                    Item { Layout.fillWidth: true }
+                                    StyledText {
+                                        text: root.isOffline ? "OFFLINE" : "ONLINE"
+                                        font.pixelSize: Theme.fontSizeSmall
+                                        font.weight: Font.Bold
+                                        color: root.isOffline ? Theme.error : "#a6e3a1"
+                                    }
                                 }
 
-                                StyledText {
-                                    text: `${root.sysInfo.cpu_name || "CPU"} • ${root.sysInfo.os_name || "Linux"} (${root.sysInfo.kernel_version || "Kernel"})`
-                                    font.pixelSize: Theme.fontSizeSmall
-                                    color: Theme.surfaceVariantText
-                                    elide: Text.ElideRight
+                                GridLayout {
+                                    columns: 2
+                                    rowSpacing: 4
+                                    columnSpacing: Theme.spacingM
+                                    Layout.fillWidth: true
+
+                                    StyledText { text: "CPU Model:"; font.pixelSize: Theme.fontSizeSmall; font.weight: Font.Bold; color: Theme.surfaceVariantText }
+                                    StyledText { text: root.sysInfo.cpu_name || "Intel(R) Core(TM) i5-8500 CPU @ 3.00GHz"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; elide: Text.ElideRight; Layout.fillWidth: true }
+
+                                    StyledText { text: "Hardware Model:"; font.pixelSize: Theme.fontSizeSmall; font.weight: Font.Bold; color: Theme.surfaceVariantText }
+                                    StyledText { text: root.sysInfo.hardware_model || "10SJS0FJ00"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; elide: Text.ElideRight; Layout.fillWidth: true }
+
+                                    StyledText { text: "OS Name:"; font.pixelSize: Theme.fontSizeSmall; font.weight: Font.Bold; color: Theme.surfaceVariantText }
+                                    StyledText { text: root.sysInfo.os_name || "Fedora Linux 44 64bit"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; elide: Text.ElideRight; Layout.fillWidth: true }
+
+                                    StyledText { text: "Uptime:"; font.pixelSize: Theme.fontSizeSmall; font.weight: Font.Bold; color: Theme.surfaceVariantText }
+                                    StyledText { text: root.sysInfo.uptime || "17 days, 17:36:20"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; elide: Text.ElideRight; Layout.fillWidth: true }
                                 }
                             }
                         }
@@ -663,7 +696,15 @@ PluginComponent {
                                     onPaint: {
                                         var ctx = getContext("2d");
                                         ctx.clearRect(0, 0, width, height);
-                                        if (root.cpuHistory.length < 2) return;
+
+                                        ctx.beginPath();
+                                        ctx.lineWidth = 1;
+                                        ctx.strokeStyle = Theme.surfaceContainerHighest || "#444";
+                                        ctx.moveTo(0, height - 2);
+                                        ctx.lineTo(width, height - 2);
+                                        ctx.stroke();
+
+                                        if (!root.cpuHistory || root.cpuHistory.length < 2) return;
 
                                         ctx.beginPath();
                                         ctx.lineWidth = 2;
@@ -671,8 +712,8 @@ PluginComponent {
 
                                         var step = width / (root.cpuHistory.length - 1);
                                         for (var i = 0; i < root.cpuHistory.length; i++) {
-                                            var val = root.cpuHistory[i];
-                                            var y = height - (val / 100.0 * height);
+                                            var val = root.cpuHistory[i] || 0;
+                                            var y = height - (val / 100.0 * (height - 4)) - 2;
                                             var x = i * step;
                                             if (i === 0) ctx.moveTo(x, y);
                                             else ctx.lineTo(x, y);
@@ -729,15 +770,16 @@ PluginComponent {
                             }
 
                             ListView {
+                                id: subvolListView
                                 Layout.fillWidth: true
-                                implicitHeight: Math.min(260, Math.max(60, root.subvolumesList.length * (isExpanded ? 105 : 48)))
+                                implicitHeight: Math.max(120, root.subvolumesList.length * 54)
                                 clip: true
                                 model: root.subvolumesList
                                 spacing: Theme.spacingS
 
                                 delegate: StyledRect {
                                     width: ListView.view.width
-                                    height: isExpanded ? 100 : 44
+                                    height: isExpanded ? 100 : 48
                                     radius: Theme.cornerRadiusSmall
                                     color: Theme.surfaceContainerHigh
 
@@ -808,6 +850,14 @@ PluginComponent {
                                             }
                                         }
                                     }
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        onClicked: {
+                                            if (isExpanded) root.expandedSubvolName = "";
+                                            else root.expandedSubvolName = subName;
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -862,7 +912,15 @@ PluginComponent {
                                         onPaint: {
                                             var ctx = getContext("2d");
                                             ctx.clearRect(0, 0, width, height);
-                                            if (root.netRxHistory.length < 2) return;
+
+                                            ctx.beginPath();
+                                            ctx.lineWidth = 1;
+                                            ctx.strokeStyle = Theme.surfaceContainerHighest || "#444";
+                                            ctx.moveTo(0, height - 2);
+                                            ctx.lineTo(width, height - 2);
+                                            ctx.stroke();
+
+                                            if (!root.netRxHistory || root.netRxHistory.length < 2) return;
 
                                             var maxRx = 1;
                                             for (var i = 0; i < root.netRxHistory.length; i++) {
@@ -875,8 +933,8 @@ PluginComponent {
 
                                             var step = width / (root.netRxHistory.length - 1);
                                             for (var j = 0; j < root.netRxHistory.length; j++) {
-                                                var val = root.netRxHistory[j];
-                                                var y = height - (val / maxRx * height);
+                                                var val = root.netRxHistory[j] || 0;
+                                                var y = height - (val / maxRx * (height - 4)) - 2;
                                                 var x = j * step;
                                                 if (j === 0) ctx.moveTo(x, y);
                                                 else ctx.lineTo(x, y);
@@ -903,14 +961,14 @@ PluginComponent {
 
                             DankTextField {
                                 Layout.fillWidth: true
-                                placeholderText: "Filter physical & virtual interfaces..."
+                                placeholderText: "Filter interfaces..."
                                 text: root.virtualNetQuery
                                 onTextChanged: root.virtualNetQuery = text
                             }
 
                             ListView {
                                 Layout.fillWidth: true
-                                implicitHeight: Math.min(140, Math.max(45, root.getAllInterfacesList().length * 42))
+                                implicitHeight: Math.min(150, Math.max(45, root.getAllInterfacesList().length * 42))
                                 clip: true
                                 model: root.getAllInterfacesList()
                                 spacing: Theme.spacingXS
@@ -946,8 +1004,8 @@ PluginComponent {
                                             text: isSelected ? "Active" : "Select"
                                             onClicked: {
                                                 root.selectedNetId = itemIfName;
-                                                root.netRxHistory = [];
-                                                root.netTxHistory = [];
+                                                root.netRxHistory = [0, 0, 0, 0, 0];
+                                                root.netTxHistory = [0, 0, 0, 0, 0];
                                                 root.fetchSelectedNetDetail(itemIfName);
                                             }
                                         }
@@ -1025,7 +1083,7 @@ PluginComponent {
                                                     } else {
                                                         root.expandedContainerId = cId;
                                                         root.expandedContainerCpu = 0;
-                                                        root.expandedContainerHistory = [];
+                                                        root.expandedContainerHistory = [0, 0, 0, 0, 0];
                                                         root.fetchContainerCpu(cId);
                                                     }
                                                 }
@@ -1089,7 +1147,15 @@ PluginComponent {
                                                 onPaint: {
                                                     var ctx = getContext("2d");
                                                     ctx.clearRect(0, 0, width, height);
-                                                    if (root.expandedContainerHistory.length < 2) return;
+
+                                                    ctx.beginPath();
+                                                    ctx.lineWidth = 1;
+                                                    ctx.strokeStyle = Theme.surfaceContainerHighest || "#444";
+                                                    ctx.moveTo(0, height - 2);
+                                                    ctx.lineTo(width, height - 2);
+                                                    ctx.stroke();
+
+                                                    if (!root.expandedContainerHistory || root.expandedContainerHistory.length < 2) return;
 
                                                     ctx.beginPath();
                                                     ctx.lineWidth = 2;
@@ -1097,8 +1163,8 @@ PluginComponent {
 
                                                     var step = width / (root.expandedContainerHistory.length - 1);
                                                     for (var i = 0; i < root.expandedContainerHistory.length; i++) {
-                                                        var val = root.expandedContainerHistory[i];
-                                                        var y = height - (val / 100.0 * height);
+                                                        var val = root.expandedContainerHistory[i] || 0;
+                                                        var y = height - (val / 100.0 * (height - 4)) - 2;
                                                         var x = i * step;
                                                         if (i === 0) ctx.moveTo(x, y);
                                                         else ctx.lineTo(x, y);

@@ -7,7 +7,7 @@
   <img src="VMonitorSRV.svg" alt="fedsrv-control Logo" width="128" height="128">
 </p>
 
-**fedsrv-control** is a native *Composite Plugin* for **DankMaterialShell (DMS ≥ 1.5.0)** built to provide real-time monitoring and management of a Fedora Linux server directly from your desktop environment.
+**fedsrv-control** is a plugin for **DankMaterialShell (DMS ≥ 1.5.0)** for monitoring a remote Linux server running Glances from your desktop environment.
 
 ---
 
@@ -15,54 +15,50 @@
   <img src="screenshot.png" alt="fedsrv-control Preview" width="800">
 </p>
 
-## Overview & Features
+## Features
 
-Designed with modularity in mind, `fedsrv-control` splits its interface across multiple surface types provided by DMS 1.5, allowing you to track system health without cluttering your workspace:
+The plugin provides three surface components in DMS:
 
-* **DankBar Widget (`widget`):** A minimal indicator for the top bar (supporting both horizontal and vertical orientation). Displays current CPU and RAM load alongside an LED status icon that reflects overall server availability and alerts.
-* **Detailed Control Panel (`popout`):** Clicking the bar widget reveals a rich control center with comprehensive telemetry:
-  * **Host & Hardware Details:** Hostname, CPU model, OS version, kernel build, and uptime.
-  * **Live Resources:** Custom styled progress bars for CPU, RAM, and root storage.
-  * **Btrfs Subvolumes:** Monitored usage across active subvolume mounts.
-  * **Podman Containers:** Live status tracking for active/stopped/error containers, image tags, and memory usage.
-* **Desktop Layer Tile (`desktop`):** An independent widget anchored directly to the desktop layer via *wlr-layer-shell* for continuous background monitoring.
-
----
-
-## Performance & Architecture
-
-Built for minimal overhead, `fedsrv-control` maintains less than **1% CPU utilization** on the client side. 
-
-* **Asynchronous Polling:** Leverages native `XMLHttpRequest` calls in QML to query the server API asynchronously without spawning heavy external sub-processes.
-* **Tiered Updates:** Uses high-frequency fast-polling (1.5s) for critical live metrics (CPU/RAM) and low-frequency slow-polling (15s) for static metadata (hardware info, mounts).
-* **Fault Tolerant:** Automatically switches to a graceful "OFFLINE" state with a visual fallback banner if the server endpoint drops or becomes unreachable, preventing desktop UI freezes.
+* **Bar Widget (`widget`):** Indicator for the top bar (supports horizontal and vertical orientations). Displays CPU and RAM usage alongside a server status icon.
+* **Control Panel (`popout`):** Popout menu triggered from the bar widget:
+  * **Host Information:** Hostname, CPU model, OS version, kernel build, and uptime.
+  * **System Resources:** CPU, RAM, and root filesystem usage.
+  * **Btrfs Subvolumes:** Storage usage for mounted Btrfs subvolumes.
+  * **Podman Containers:** Container status (active, stopped, error), image tags, and memory usage.
+* **Desktop Tile (`desktop`):** Desktop widget using *wlr-layer-shell* for persistent monitoring on the desktop layer.
 
 ---
 
-## Server Requirements & Glances Integration
+## Architecture & Communication
 
-The plugin connects to a custom Glances monitoring setup on the remote server.
+* **Asynchronous Polling:** Queries the server API asynchronously via QML `XMLHttpRequest`.
+* **Tiered Polling:** 
+  * High-frequency polling (default 1.5s) for dynamic metrics (CPU/RAM).
+  * Low-frequency polling (default 15s) for static metadata (hardware info, mounts).
+* **Connection Fallback:** Displays an offline state indicator if the remote server endpoint becomes unreachable.
 
-### Prerequisites
+---
+
+## Prerequisites
+
 1. **DankMaterialShell** version `1.5.0` or higher.
-2. A remote server running **Glances** configured with the tailored dotfiles repository:
+2. A remote server running **Glances** configured with:
    * 🔗 **Glances Dotfiles:** [sowtarez / dotfiles-glances](https://gitlab.com/sowtarez/dotfiles-glances)
-   *(Note: An automated `install.sh` script and `systemd` service setup will be added to the dotfiles repository soon).*
 
 ---
 
 ## Installation & Setup
 
-1. **Clone or move the plugin** into your DMS plugins directory:
+1. **Clone the plugin** into your DMS plugins directory:
    ```bash
    git clone https://github.com/your-username/fedsrv-control.git ~/.config/DankMaterialShell/plugins/fedsrv-control
    ```
 
-2. **Scan and Reload Plugins:**
-   Open DMS Settings → Plugins → Scan for Plugins, enable `fedsrv-control`, and run:
+2. **Enable and Reload:**
+   In DMS Settings → Plugins → Scan for Plugins, enable `fedsrv-control`, then execute:
    ```bash
    dms ipc call plugins reload fedsrv-control
    ```
 
 3. **Configuration:**
-   Open Settings → Plugins → fedsrv-control Settings to set your server's API Host/Port and adjust polling frequencies.
+   Go to DMS Settings → Plugins → `fedsrv-control` Settings to configure the server host, port, and polling intervals.

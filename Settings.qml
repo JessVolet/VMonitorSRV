@@ -52,12 +52,4 @@ PluginSettings {
         maximum: 10
         unit: "s"
     }
-
-    StringSetting {
-        settingKey: "serversConfig"
-        label: "Hosts Configuration (JSON)"
-        description: "JSON array of monitored hosts [{\"name\":\"Server Name\",\"host\":\"192.168.100.200\",\"port\":\"61208\"}]"
-        placeholder: "[{\"name\":\"Fedora Primary\",\"host\":\"192.168.100.200\",\"port\":\"61208\"}]"
-        defaultValue: "[{\"name\":\"Fedora Primary\",\"host\":\"192.168.100.200\",\"port\":\"61208\"}]"
-    }
 }

@@ -1,18 +1,18 @@
-# fedsrv-control
+# VMonitorSRV
 
 [![DMS Version](https://img.shields.io/badge/DMS-%21%3D1.5.0-818cf8.svg)](https://github.com/AvengeMedia/DankMaterialShell)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 <p align="center">
-  <img src="VMonitorSRV.svg" alt="fedsrv-control Logo" width="128" height="128">
+  <img src="VMonitorSRV.svg" alt="VMonitorSRV Logo" width="128" height="128">
 </p>
 
-**fedsrv-control** is a plugin for **DankMaterialShell (DMS ≥ 1.5.0)** for monitoring a remote Linux server running Glances from your desktop environment.
+**VMonitorSRV** is a plugin for **DankMaterialShell (DMS ≥ 1.5.0)** for monitoring a remote Linux server running Glances from your desktop environment.
 
 ---
 
 <p align="center">
-  <img src="screenshot.png" alt="fedsrv-control Preview" width="800">
+  <img src="screenshot.png" alt="VMonitorSRV Preview" width="800">
 </p>
 
 ## Features
@@ -51,14 +51,14 @@ The plugin provides three surface components in DMS:
 
 1. **Clone the plugin** into your DMS plugins directory:
    ```bash
-   git clone https://github.com/your-username/fedsrv-control.git ~/.config/DankMaterialShell/plugins/fedsrv-control
+   git clone https://github.com/JessVolet/VMonitorSRV.git ~/.config/DankMaterialShell/plugins/vMonitorSRV
    ```
 
 2. **Enable and Reload:**
-   In DMS Settings → Plugins → Scan for Plugins, enable `fedsrv-control`, then execute:
+   In DMS Settings → Plugins → Scan for Plugins, enable `VMonitorSRV`, then execute:
    ```bash
-   dms ipc call plugins reload fedsrv-control
+   dms ipc call plugins reload vMonitorSRV
    ```
 
 3. **Configuration:**
-   Go to DMS Settings → Plugins → `fedsrv-control` Settings to configure the server host, port, and polling intervals.
+   Go to DMS Settings → Plugins → `VMonitorSRV` Settings to configure the server host, port, and polling intervals.

@@ -2,109 +2,115 @@ import QtQuick
 import QtQuick.Layouts
 import qs.Common
 import qs.Widgets
-import qs.Modules.Plugins
 
-PluginComponent {
+StyledRect {
     id: root
 
-    property var serversList: pluginData.serversList || []
-    property int activeServerIndex: pluginData.activeServerIndex || 0
+    property var serversList: []
+    property int activeServerIndex: 0
 
     signal serverSelected(int index)
     signal openHostsFile()
     signal reloadHostsFile()
 
-    // Renderizado para barra horizontal
-    horizontalBarPill: Component {
-        StyledRect {
-            implicitWidth: contentLayout.implicitWidth + Theme.spacingM * 2
-            implicitHeight: root.barThickness
-            radius: Theme.cornerRadius
-            color: Theme.surfaceContainerHighest
+    Layout.fillWidth: true
+    implicitHeight: mainLayout.implicitHeight + Theme.spacingM * 2
+    radius: Theme.cornerRadius
+    color: Theme.surfaceContainerHighest
 
-            RowLayout {
-                id: contentLayout
-                anchors.fill: parent
-                anchors.margins: Theme.spacingS
-                spacing: Theme.spacingS
+    ColumnLayout {
+        id: mainLayout
+        anchors.fill: parent
+        anchors.margins: Theme.spacingM
+        spacing: Theme.spacingS
 
-                DankButton {
-                    iconName: "refresh"
-                    backgroundColor: Theme.surfaceContainerHigh
-                    textColor: Theme.surfaceText
-                    onClicked: root.reloadHostsFile()
-                }
+        // Encabezado con botones compactos (solo icono)
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: Theme.spacingXS
 
-                DankButton {
-                    iconName: "edit"
-                    backgroundColor: Theme.surfaceContainerHigh
-                    textColor: Theme.surfaceText
-                    onClicked: root.openHostsFile()
-                }
+            StyledText {
+                text: "Select Monitored Server"
+                font.pixelSize: Theme.fontSizeMedium
+                font.weight: Font.Bold
+                color: Theme.primary
+                Layout.fillWidth: true
+                elide: Text.ElideRight
+            }
+
+            DankButton {
+                iconName: "refresh"
+                backgroundColor: Theme.surfaceContainerHigh
+                textColor: Theme.surfaceText
+                onClicked: root.reloadHostsFile()
+            }
+
+            DankButton {
+                iconName: "edit"
+                backgroundColor: Theme.surfaceContainerHigh
+                textColor: Theme.surfaceText
+                onClicked: root.openHostsFile()
             }
         }
-    }
 
-    // Popout (Menú desplegable) con la lista de servidores
-    popoutContent: Component {
-        PopoutComponent {
-            id: popout
+        // Mensaje cuando no se detecta ningún servidor
+        StyledText {
+            visible: !root.serversList || root.serversList.length === 0
+            text: "No servers found in hosts.json"
+            font.pixelSize: Theme.fontSizeSmall
+            color: Theme.surfaceVariantText
+            Layout.alignment: Qt.AlignHCenter
+            Layout.topMargin: Theme.spacingS
+            Layout.bottomMargin: Theme.spacingS
+        }
 
-            headerText: "Monitored Servers"
-            detailsText: "Select a server to monitor"
+        // Lista de Servidores
+        ColumnLayout {
+            visible: root.serversList && root.serversList.length > 0
+            Layout.fillWidth: true
+            spacing: Theme.spacingXS
 
-            ColumnLayout {
-                width: parent.width
-                spacing: Theme.spacingXS
+            Repeater {
+                model: root.serversList
 
-                Repeater {
-                    model: root.serversList
+                delegate: StyledRect {
+                    required property var modelData
+                    required property int index
 
-                    delegate: StyledRect {
-                        required property var modelData
-                        required property int index
+                    Layout.fillWidth: true
+                    implicitHeight: 38
+                    radius: Theme.cornerRadiusSmall
 
-                        Layout.fillWidth: true
-                        implicitHeight: 38
-                        radius: Theme.cornerRadiusSmall
-                        
-                        property bool isSelected: index === root.activeServerIndex
-                        color: isSelected ? Theme.primary : Theme.surfaceContainerHigh
+                    property bool isSelected: index === root.activeServerIndex
+                    color: isSelected ? Theme.primary : Theme.surfaceContainerHigh
 
-                        RowLayout {
-                            anchors.fill: parent
-                            anchors.margins: Theme.spacingS
-                            spacing: Theme.spacingS
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.margins: Theme.spacingS
+                        spacing: Theme.spacingS
 
-                            DankIcon {
-                                name: isSelected ? "dns" : "server"
-                                color: isSelected ? Theme.onPrimary : Theme.primary
-                            }
-
-                            StyledText {
-                                text: `${modelData.name || modelData.host} (${modelData.host}:${modelData.port || "61208"})`
-                                font.pixelSize: Theme.fontSizeSmall
-                                font.weight: isSelected ? Font.Bold : Font.Normal
-                                color: isSelected ? Theme.onPrimary : Theme.surfaceText
-                                Layout.fillWidth: true
-                                elide: Text.ElideRight
-                            }
+                        DankIcon {
+                            name: isSelected ? "dns" : "server"
+                            color: isSelected ? Theme.onPrimary : Theme.primary
                         }
 
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                root.activeServerIndex = index
-                                root.serverSelected(index)
-                            }
+                        StyledText {
+                            text: `${modelData.name || modelData.host} (${modelData.host}:${modelData.port || "61208"})`
+                            font.pixelSize: Theme.fontSizeSmall
+                            font.weight: isSelected ? Font.Bold : Font.Normal
+                            color: isSelected ? Theme.onPrimary : Theme.surfaceText
+                            Layout.fillWidth: true
+                            elide: Text.ElideRight
                         }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.serverSelected(index)
                     }
                 }
             }
         }
     }
-
-    popoutWidth: 320
-    popoutHeight: 300
 }

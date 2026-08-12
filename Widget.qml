@@ -80,6 +80,8 @@ PluginComponent {
     FileView {
         id: hostsFileView
         path: root.hostsFilePath
+        blockLoading: true       // Forzar a que la lectura sea inmediata al iniciar
+        watchChanges: true       // Escuchar cambios en el disco para disparar onFileChanged
         onFileChanged: root.loadServersFromHostsFile()
     }
 
@@ -115,9 +117,7 @@ PluginComponent {
     }
 
     function reloadHostsNow() {
-        var p = root.hostsFilePath;
-        hostsFileView.path = "";
-        hostsFileView.path = p;
+        hostsFileView.reload();
         root.loadServersFromHostsFile();
     }
 

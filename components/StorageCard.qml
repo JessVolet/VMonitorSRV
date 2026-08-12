@@ -14,6 +14,9 @@ StyledRect {
     property var bytesToGbFunc: function(b) { return "0.0 GB"; }
     property bool emptySectionExpanded: false
 
+    readonly property int subvolCount: Array.isArray(root.subvolumesList) ? root.subvolumesList.length : 0
+    readonly property bool hasSubvolumes: subvolCount > 0
+
     signal subvolSelected(string name, var data)
 
     Layout.fillWidth: true
@@ -59,12 +62,12 @@ StyledRect {
         }
 
         ColumnLayout {
-            visible: root.subvolumesList.length > 0
+            visible: root.hasSubvolumes
             Layout.fillWidth: true
             spacing: Theme.spacingS
 
             StyledText {
-                text: `Btrfs Subvolumes Wheel (${root.subvolumesList.length})`
+                text: `Btrfs Subvolumes Wheel (${root.subvolCount})`
                 font.pixelSize: Theme.fontSizeMedium
                 font.weight: Font.Bold
                 color: Theme.surfaceText
@@ -83,9 +86,11 @@ StyledRect {
                     width: 145
                     height: 68
                     radius: Theme.cornerRadius
-                    color: isSelected ? root.getStorageColorFunc(modelData.percent || 0) : Theme.surfaceContainerHighest
+                    color: isSelected ? root.getStorageColorFunc(subPercent) : Theme.surfaceContainerHighest
 
-                    property string subName: modelData.name || "subvol"
+                    property var itemData: typeof modelData === "object" ? modelData : ({ "name": modelData, "percent": 0, "used_bytes": 0 })
+                    property string subName: itemData.name || "subvol"
+                    property real subPercent: itemData.percent || 0
                     property bool isSelected: root.selectedSubvolName === subName || (root.selectedSubvolName === "" && index === 0)
 
                     ColumnLayout {
@@ -97,7 +102,7 @@ StyledRect {
                             Layout.fillWidth: true
                             DankIcon {
                                 name: "folder"
-                                color: isSelected ? Theme.onPrimary : root.getStorageColorFunc(modelData.percent || 0)
+                                color: isSelected ? Theme.onPrimary : root.getStorageColorFunc(subPercent)
                             }
                             StyledText {
                                 text: subName
@@ -110,9 +115,9 @@ StyledRect {
                         }
 
                         StyledText {
-                            text: `${(modelData.percent || 0).toFixed(1)}% (${root.bytesToGbFunc(modelData.used_bytes)})`
+                            text: `${subPercent.toFixed(1)}% (${root.bytesToGbFunc(itemData.used_bytes || 0)})`
                             font.pixelSize: Theme.fontSizeSmall - 1
-                            color: isSelected ? Theme.onPrimary : root.getStorageColorFunc(modelData.percent || 0)
+                            color: isSelected ? Theme.onPrimary : root.getStorageColorFunc(subPercent)
                             font.weight: Font.Bold
                             elide: Text.ElideRight
                         }
@@ -120,7 +125,7 @@ StyledRect {
 
                     MouseArea {
                         anchors.fill: parent
-                        onClicked: root.subvolSelected(subName, modelData)
+                        onClicked: root.subvolSelected(subName, itemData)
                     }
                 }
             }
@@ -172,7 +177,7 @@ StyledRect {
         }
 
         ColumnLayout {
-            visible: root.subvolumesList.length === 0
+            visible: !root.hasSubvolumes
             Layout.fillWidth: true
             spacing: Theme.spacingS
 

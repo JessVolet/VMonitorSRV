@@ -1068,16 +1068,29 @@ PluginComponent {
                                             Layout.fillWidth: true
                                         }
 
-                                        DankButton {
-                                            text: isSelected ? "Active" : "Select"
-                                            backgroundColor: isSelected ? Theme.primary : Theme.surfaceContainerHighest
-                                            textColor: isSelected ? Theme.onPrimary : Theme.surfaceText
-                                            onClicked: {
-                                                root.selectedNetId = itemIfName;
-                                                root.netRxHistory = [0, 0, 0, 0, 0];
-                                                root.netTxHistory = [0, 0, 0, 0, 0];
-                                                root.fetchSelectedNetDetail(itemIfName);
+                                        StyledRect {
+                                            width: 60
+                                            height: 26
+                                            radius: Theme.cornerRadiusSmall
+                                            color: isSelected ? Theme.primary : Theme.surfaceContainerHighest
+
+                                            StyledText {
+                                                anchors.centerIn: parent
+                                                text: isSelected ? "Active" : "Select"
+                                                font.pixelSize: Theme.fontSizeSmall - 1
+                                                font.weight: isSelected ? Font.Bold : Font.Normal
+                                                color: isSelected ? Theme.onPrimary : Theme.surfaceText
                                             }
+                                        }
+                                    }
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        onClicked: {
+                                            root.selectedNetId = itemIfName;
+                                            root.netRxHistory = [0, 0, 0, 0, 0];
+                                            root.netTxHistory = [0, 0, 0, 0, 0];
+                                            root.fetchSelectedNetDetail(itemIfName);
                                         }
                                     }
                                 }

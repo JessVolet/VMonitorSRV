@@ -10,7 +10,7 @@ PluginSettings {
 
     StyledText {
         width: parent.width
-        text: "VMonitorSRV Settings"
+        text: "VMonitorSRV Configuration"
         font.pixelSize: Theme.fontSizeLarge
         font.weight: Font.Bold
         color: Theme.surfaceText
@@ -24,9 +24,29 @@ PluginSettings {
     }
 
     SliderSetting {
-        settingKey: "refreshInterval"
-        label: "Refresh Interval (seconds)"
-        description: "Update frequency for high-rate CPU, RAM and Network metrics"
+        settingKey: "fastRefreshInterval"
+        label: "Fast Metrics Refresh Interval"
+        description: "Update frequency for constant high-rate metrics (CPU %, RAM %, Disk Root %)"
+        defaultValue: 2
+        minimum: 1
+        maximum: 10
+        unit: "s"
+    }
+
+    SliderSetting {
+        settingKey: "slowRefreshInterval"
+        label: "General Info Refresh Interval"
+        description: "Update frequency for static system info, container list, subvolumes, and interface discovery"
+        defaultValue: 20
+        minimum: 10
+        maximum: 60
+        unit: "s"
+    }
+
+    SliderSetting {
+        settingKey: "detailRefreshInterval"
+        label: "On-Demand Details Polling Interval"
+        description: "Update frequency when inspecting live container CPU or selected network graph detail"
         defaultValue: 2
         minimum: 1
         maximum: 10
@@ -35,17 +55,9 @@ PluginSettings {
 
     StringSetting {
         settingKey: "serversConfig"
-        label: "Servers Configuration (JSON)"
-        description: "List of monitored servers [{\"name\":\"Fedora Primary\",\"host\":\"192.168.100.200\",\"port\":\"61208\"}]"
-        placeholder: "[{\"name\":\"Fedora Main\",\"host\":\"192.168.100.200\",\"port\":\"61208\"}]"
-        defaultValue: "[{\"name\":\"Fedora Main\",\"host\":\"192.168.100.200\",\"port\":\"61208\"}]"
-    }
-
-    StringSetting {
-        settingKey: "apiBaseUrl"
-        label: "Default API Base URL"
-        description: "Fallback IP address and port if no server list is configured"
-        placeholder: "http://192.168.100.200:61208/api/widget"
-        defaultValue: "http://192.168.100.200:61208/api/widget"
+        label: "Hosts Configuration (JSON)"
+        description: "JSON array of monitored hosts [{\"name\":\"Server Name\",\"host\":\"192.168.100.200\",\"port\":\"61208\"}]"
+        placeholder: "[{\"name\":\"Fedora Primary\",\"host\":\"192.168.100.200\",\"port\":\"61208\"}]"
+        defaultValue: "[{\"name\":\"Fedora Primary\",\"host\":\"192.168.100.200\",\"port\":\"61208\"}]"
     }
 }

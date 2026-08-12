@@ -14,7 +14,9 @@ PluginComponent {
     popoutHeight: 640
 
     property bool enableGraphs: pluginData.enableGraphs !== false
-    property int intervalSecs: Math.max(1, pluginData.refreshInterval || 2)
+    property int fastIntervalSecs: Math.max(1, pluginData.fastRefreshInterval || pluginData.refreshInterval || 2)
+    property int slowIntervalSecs: Math.max(5, pluginData.slowRefreshInterval || 20)
+    property int detailIntervalSecs: Math.max(1, pluginData.detailRefreshInterval || 2)
 
     property var serversList: {
         try {
@@ -71,7 +73,8 @@ PluginComponent {
     property string virtualNetQuery: ""
 
     Timer {
-        interval: root.intervalSecs * 1000
+        id: fastMetricsTimer
+        interval: root.fastIntervalSecs * 1000
         running: true
         repeat: true
         triggeredOnStart: true
@@ -79,7 +82,8 @@ PluginComponent {
     }
 
     Timer {
-        interval: 15000
+        id: slowMetricsTimer
+        interval: root.slowIntervalSecs * 1000
         running: true
         repeat: true
         triggeredOnStart: true
@@ -91,7 +95,7 @@ PluginComponent {
 
     Timer {
         id: containerCpuTimer
-        interval: 1500
+        interval: root.detailIntervalSecs * 1000
         running: root.expandedContainerId !== "" && !root.isOffline
         repeat: true
         onTriggered: root.fetchContainerCpu(root.expandedContainerId)
@@ -99,7 +103,7 @@ PluginComponent {
 
     Timer {
         id: netDetailTimer
-        interval: 1500
+        interval: root.detailIntervalSecs * 1000
         running: root.selectedNetId !== "" && !root.isOffline
         repeat: true
         onTriggered: root.fetchSelectedNetDetail(root.selectedNetId)

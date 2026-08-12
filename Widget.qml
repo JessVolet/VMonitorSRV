@@ -672,7 +672,7 @@ PluginComponent {
 
                             StyledRect {
                                 Layout.fillWidth: true
-                                implicitHeight: root.enableGraphs ? 190 : 135
+                                implicitHeight: root.enableGraphs ? 210 : 135
                                 radius: Theme.cornerRadius
                                 color: Theme.surfaceContainerHigh
 
@@ -756,42 +756,131 @@ PluginComponent {
                                         }
                                     }
 
-                                    Canvas {
+                                    Item {
                                         visible: root.enableGraphs
                                         Layout.fillWidth: true
-                                        implicitHeight: 35
-                                        onPaint: {
-                                            var ctx = getContext("2d");
-                                            ctx.clearRect(0, 0, width, height);
+                                        implicitHeight: 55
 
-                                            ctx.beginPath();
-                                            ctx.lineWidth = 1;
-                                            ctx.strokeStyle = Theme.surfaceContainerHighest;
-                                            ctx.moveTo(0, height - 2);
-                                            ctx.lineTo(width, height - 2);
-                                            ctx.stroke();
+                                        property int hoverIndex: -1
+                                        property real hoverX: 0
+                                        property real hoverY: 0
+                                        property string hoverText: ""
 
-                                            if (!root.cpuHistory || root.cpuHistory.length < 2) return;
+                                        Canvas {
+                                            id: cpuCanvas
+                                            anchors.fill: parent
+                                            onPaint: {
+                                                var ctx = getContext("2d");
+                                                ctx.clearRect(0, 0, width, height);
 
-                                            ctx.beginPath();
-                                            ctx.lineWidth = 2;
-                                            ctx.strokeStyle = root.getMetricColor(root.sysResources.cpu.usage_percent);
+                                                var h = height - 12;
+                                                var w = width - 24;
+                                                var x0 = 20;
 
-                                            var step = width / (root.cpuHistory.length - 1);
-                                            for (var i = 0; i < root.cpuHistory.length; i++) {
-                                                var val = root.cpuHistory[i] || 0;
-                                                var y = height - (val / 100.0 * (height - 4)) - 2;
-                                                var x = i * step;
-                                                if (i === 0) ctx.moveTo(x, y);
-                                                else ctx.lineTo(x, y);
+                                                ctx.beginPath();
+                                                ctx.lineWidth = 1;
+                                                ctx.strokeStyle = Theme.surfaceContainerHighest;
+                                                ctx.moveTo(x0, 2);
+                                                ctx.lineTo(x0 + w, 2);
+                                                ctx.moveTo(x0, h / 2 + 2);
+                                                ctx.lineTo(x0 + w, h / 2 + 2);
+                                                ctx.moveTo(x0, h + 2);
+                                                ctx.lineTo(x0 + w, h + 2);
+                                                ctx.stroke();
+
+                                                ctx.fillStyle = Theme.surfaceVariantText;
+                                                ctx.font = "8px sans-serif";
+                                                ctx.fillText("100%", 0, 8);
+                                                ctx.fillText("50%", 0, h / 2 + 5);
+                                                ctx.fillText("0%", 0, h + 5);
+
+                                                if (!root.cpuHistory || root.cpuHistory.length < 2) return;
+
+                                                ctx.beginPath();
+                                                ctx.lineWidth = 2;
+                                                ctx.strokeStyle = root.getMetricColor(root.sysResources.cpu.usage_percent);
+
+                                                var step = w / (root.cpuHistory.length - 1);
+                                                for (var i = 0; i < root.cpuHistory.length; i++) {
+                                                    var val = root.cpuHistory[i] || 0;
+                                                    var y = h - (val / 100.0 * h) + 2;
+                                                    var x = x0 + i * step;
+                                                    if (i === 0) ctx.moveTo(x, y);
+                                                    else ctx.lineTo(x, y);
+                                                }
+                                                ctx.stroke();
+
+                                                if (parent.hoverIndex >= 0 && parent.hoverIndex < root.cpuHistory.length) {
+                                                    var hx = x0 + parent.hoverIndex * step;
+                                                    var hval = root.cpuHistory[parent.hoverIndex] || 0;
+                                                    var hy = h - (hval / 100.0 * h) + 2;
+
+                                                    ctx.beginPath();
+                                                    ctx.lineWidth = 1;
+                                                    ctx.strokeStyle = Theme.primary;
+                                                    ctx.moveTo(hx, 0);
+                                                    ctx.lineTo(hx, h + 4);
+                                                    ctx.stroke();
+
+                                                    ctx.beginPath();
+                                                    ctx.arc(hx, hy, 4, 0, 2 * Math.PI);
+                                                    ctx.fillStyle = Theme.primary;
+                                                    ctx.fill();
+                                                }
                                             }
-                                            ctx.stroke();
+
+                                            Connections {
+                                                target: root
+                                                function onCpuHistoryChanged() {
+                                                    if (root.enableGraphs) cpuCanvas.requestPaint();
+                                                }
+                                            }
                                         }
 
-                                        Connections {
-                                            target: root
-                                            function onCpuHistoryChanged() {
-                                                if (root.enableGraphs) parent.requestPaint();
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            onPositionChanged: (mouse) => {
+                                                var w = width - 24;
+                                                var x0 = 20;
+                                                if (mouse.x >= x0 && mouse.x <= x0 + w && root.cpuHistory.length > 1) {
+                                                    var step = w / (root.cpuHistory.length - 1);
+                                                    var idx = Math.round((mouse.x - x0) / step);
+                                                    idx = Math.max(0, Math.min(root.cpuHistory.length - 1, idx));
+                                                    parent.hoverIndex = idx;
+                                                    parent.hoverX = x0 + idx * step;
+                                                    var val = root.cpuHistory[idx] || 0;
+                                                    parent.hoverY = (height - 12) - (val / 100.0 * (height - 12)) + 2;
+                                                    parent.hoverText = `CPU: ${val.toFixed(1)}%`;
+                                                } else {
+                                                    parent.hoverIndex = -1;
+                                                }
+                                                cpuCanvas.requestPaint();
+                                            }
+                                            onExited: {
+                                                parent.hoverIndex = -1;
+                                                cpuCanvas.requestPaint();
+                                            }
+                                        }
+
+                                        StyledRect {
+                                            visible: parent.hoverIndex >= 0
+                                            x: Math.min(parent.width - width - 4, Math.max(4, parent.hoverX - width / 2))
+                                            y: Math.max(0, parent.hoverY - 24)
+                                            width: hoverLabel.implicitWidth + 12
+                                            height: 20
+                                            radius: Theme.cornerRadiusSmall
+                                            color: Theme.surfaceContainerHighest
+                                            border.color: Theme.primary
+                                            border.width: 1
+
+                                            StyledText {
+                                                id: hoverLabel
+                                                anchors.centerIn: parent
+                                                text: parent.parent.hoverText
+                                                font.pixelSize: Theme.fontSizeSmall - 1
+                                                font.weight: Font.Bold
+                                                color: Theme.primary
                                             }
                                         }
                                     }
@@ -972,7 +1061,7 @@ PluginComponent {
 
                             StyledRect {
                                 Layout.fillWidth: true
-                                implicitHeight: root.enableGraphs ? 115 : 60
+                                implicitHeight: root.enableGraphs ? 135 : 60
                                 radius: Theme.cornerRadius
                                 color: Theme.surfaceContainerHigh
 
@@ -1002,47 +1091,140 @@ PluginComponent {
                                         }
                                     }
 
-                                    Canvas {
+                                    Item {
                                         visible: root.enableGraphs
                                         Layout.fillWidth: true
-                                        implicitHeight: 45
-                                        onPaint: {
-                                            var ctx = getContext("2d");
-                                            ctx.clearRect(0, 0, width, height);
+                                        implicitHeight: 65
 
-                                            ctx.beginPath();
-                                            ctx.lineWidth = 1;
-                                            ctx.strokeStyle = Theme.surfaceContainerHighest;
-                                            ctx.moveTo(0, height - 2);
-                                            ctx.lineTo(width, height - 2);
-                                            ctx.stroke();
+                                        property int hoverIndex: -1
+                                        property real hoverX: 0
+                                        property real hoverY: 0
+                                        property string hoverText: ""
 
-                                            if (!root.netRxHistory || root.netRxHistory.length < 2) return;
+                                        Canvas {
+                                            id: netCanvas
+                                            anchors.fill: parent
+                                            onPaint: {
+                                                var ctx = getContext("2d");
+                                                ctx.clearRect(0, 0, width, height);
 
-                                            var maxRx = 1;
-                                            for (var i = 0; i < root.netRxHistory.length; i++) {
-                                                if (root.netRxHistory[i] > maxRx) maxRx = root.netRxHistory[i];
+                                                var h = height - 12;
+                                                var w = width - 40;
+                                                var x0 = 36;
+
+                                                var maxRx = 1;
+                                                for (var i = 0; i < root.netRxHistory.length; i++) {
+                                                    if (root.netRxHistory[i] > maxRx) maxRx = root.netRxHistory[i];
+                                                }
+
+                                                ctx.beginPath();
+                                                ctx.lineWidth = 1;
+                                                ctx.strokeStyle = Theme.surfaceContainerHighest;
+                                                ctx.moveTo(x0, 2);
+                                                ctx.lineTo(x0 + w, 2);
+                                                ctx.moveTo(x0, h / 2 + 2);
+                                                ctx.lineTo(x0 + w, h / 2 + 2);
+                                                ctx.moveTo(x0, h + 2);
+                                                ctx.lineTo(x0 + w, h + 2);
+                                                ctx.stroke();
+
+                                                ctx.fillStyle = Theme.surfaceVariantText;
+                                                ctx.font = "8px sans-serif";
+                                                ctx.fillText(root.formatBytesRate(maxRx * 1024), 0, 8);
+                                                ctx.fillText(root.formatBytesRate((maxRx / 2) * 1024), 0, h / 2 + 5);
+                                                ctx.fillText("0 B/s", 0, h + 5);
+
+                                                if (!root.netRxHistory || root.netRxHistory.length < 2) return;
+
+                                                ctx.beginPath();
+                                                ctx.lineWidth = 2;
+                                                ctx.strokeStyle = Theme.primary;
+
+                                                var step = w / (root.netRxHistory.length - 1);
+                                                for (var j = 0; j < root.netRxHistory.length; j++) {
+                                                    var val = root.netRxHistory[j] || 0;
+                                                    var y = h - (val / maxRx * h) + 2;
+                                                    var x = x0 + j * step;
+                                                    if (j === 0) ctx.moveTo(x, y);
+                                                    else ctx.lineTo(x, y);
+                                                }
+                                                ctx.stroke();
+
+                                                if (parent.hoverIndex >= 0 && parent.hoverIndex < root.netRxHistory.length) {
+                                                    var hx = x0 + parent.hoverIndex * step;
+                                                    var hval = root.netRxHistory[parent.hoverIndex] || 0;
+                                                    var hy = h - (hval / maxRx * h) + 2;
+
+                                                    ctx.beginPath();
+                                                    ctx.lineWidth = 1;
+                                                    ctx.strokeStyle = Theme.primary;
+                                                    ctx.moveTo(hx, 0);
+                                                    ctx.lineTo(hx, h + 4);
+                                                    ctx.stroke();
+
+                                                    ctx.beginPath();
+                                                    ctx.arc(hx, hy, 4, 0, 2 * Math.PI);
+                                                    ctx.fillStyle = Theme.primary;
+                                                    ctx.fill();
+                                                }
                                             }
 
-                                            ctx.beginPath();
-                                            ctx.lineWidth = 2;
-                                            ctx.strokeStyle = Theme.primary;
-
-                                            var step = width / (root.netRxHistory.length - 1);
-                                            for (var j = 0; j < root.netRxHistory.length; j++) {
-                                                var val = root.netRxHistory[j] || 0;
-                                                var y = height - (val / maxRx * (height - 4)) - 2;
-                                                var x = j * step;
-                                                if (j === 0) ctx.moveTo(x, y);
-                                                else ctx.lineTo(x, y);
+                                            Connections {
+                                                target: root
+                                                function onNetRxHistoryChanged() {
+                                                    if (root.enableGraphs) netCanvas.requestPaint();
+                                                }
                                             }
-                                            ctx.stroke();
                                         }
 
-                                        Connections {
-                                            target: root
-                                            function onNetRxHistoryChanged() {
-                                                if (root.enableGraphs) parent.requestPaint();
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            onPositionChanged: (mouse) => {
+                                                var w = width - 40;
+                                                var x0 = 36;
+                                                if (mouse.x >= x0 && mouse.x <= x0 + w && root.netRxHistory.length > 1) {
+                                                    var step = w / (root.netRxHistory.length - 1);
+                                                    var idx = Math.round((mouse.x - x0) / step);
+                                                    idx = Math.max(0, Math.min(root.netRxHistory.length - 1, idx));
+                                                    parent.hoverIndex = idx;
+                                                    parent.hoverX = x0 + idx * step;
+                                                    var valKb = root.netRxHistory[idx] || 0;
+                                                    var maxRx = 1;
+                                                    for (var i = 0; i < root.netRxHistory.length; i++) {
+                                                        if (root.netRxHistory[i] > maxRx) maxRx = root.netRxHistory[i];
+                                                    }
+                                                    parent.hoverY = (height - 12) - (valKb / maxRx * (height - 12)) + 2;
+                                                    parent.hoverText = `RX: ${root.formatBytesRate(valKb * 1024)}`;
+                                                } else {
+                                                    parent.hoverIndex = -1;
+                                                }
+                                                netCanvas.requestPaint();
+                                            }
+                                            onExited: {
+                                                parent.hoverIndex = -1;
+                                                netCanvas.requestPaint();
+                                            }
+                                        }
+
+                                        StyledRect {
+                                            visible: parent.hoverIndex >= 0
+                                            x: Math.min(parent.width - width - 4, Math.max(4, parent.hoverX - width / 2))
+                                            y: Math.max(0, parent.hoverY - 24)
+                                            width: netHoverLabel.implicitWidth + 12
+                                            height: 20
+                                            radius: Theme.cornerRadiusSmall
+                                            color: Theme.surfaceContainerHighest
+                                            border.color: Theme.primary
+                                            border.width: 1
+
+                                            StyledText {
+                                                id: netHoverLabel
+                                                anchors.centerIn: parent
+                                                text: parent.parent.hoverText
+                                                font.pixelSize: Theme.fontSizeSmall - 1
+                                                font.weight: Font.Bold
+                                                color: Theme.primary
                                             }
                                         }
                                     }

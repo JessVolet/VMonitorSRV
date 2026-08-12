@@ -10,7 +10,7 @@ PluginComponent {
     id: root
 
     layerNamespacePlugin: "vmonitor-srv"
-    popoutWidth: 460
+    popoutWidth: 480
     popoutHeight: 640
 
     property bool enableGraphs: pluginData.enableGraphs !== false
@@ -471,14 +471,14 @@ PluginComponent {
                     Layout.fillWidth: true
                     Layout.leftMargin: Theme.spacingM
                     Layout.rightMargin: Theme.spacingM
-                    implicitHeight: headerCol.implicitHeight + Theme.spacingM * 2
+                    implicitHeight: headerCol.implicitHeight + Theme.spacingS * 2
                     radius: Theme.cornerRadius
                     color: Theme.surfaceContainerHigh
 
                     ColumnLayout {
                         id: headerCol
                         anchors.fill: parent
-                        anchors.margins: Theme.spacingM
+                        anchors.margins: Theme.spacingS
                         spacing: Theme.spacingS
 
                         RowLayout {
@@ -513,7 +513,7 @@ PluginComponent {
 
                         RowLayout {
                             Layout.fillWidth: true
-                            spacing: Theme.spacingS
+                            spacing: Theme.spacingXS
 
                             DankButton {
                                 text: `${root.currentServerObj.name || root.currentServerObj.host} ▼`

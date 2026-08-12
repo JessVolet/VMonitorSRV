@@ -1,7 +1,17 @@
 [
     {
-        "name": "Servidor Principal",
-        "host": "127.0.0.1",
+        "name": "Fed-srv",
+        "host": "192.168.100.200",
+        "port": "61208"
+    },
+    {
+        "name": "VM",
+        "host": "10.190.217.209",
+        "port": "61208"
+    },
+    {
+        "name": "UpnServer",
+        "host": "100.72.5.41",
         "port": "61208"
     }
 ]

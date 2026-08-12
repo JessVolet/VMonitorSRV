@@ -5,6 +5,7 @@ import qs.Common
 import qs.Services
 import qs.Widgets
 import qs.Modules.Plugins
+import "./components"
 
 PluginComponent {
     id: root
@@ -467,226 +468,48 @@ PluginComponent {
                 width: parent.width
                 spacing: Theme.spacingM
 
-                StyledRect {
-                    Layout.fillWidth: true
-                    Layout.leftMargin: Theme.spacingM
-                    Layout.rightMargin: Theme.spacingM
-                    implicitHeight: headerCol.implicitHeight + Theme.spacingS * 2
-                    radius: Theme.cornerRadius
-                    color: Theme.surfaceContainerHigh
-
-                    ColumnLayout {
-                        id: headerCol
-                        anchors.fill: parent
-                        anchors.margins: Theme.spacingS
-                        spacing: Theme.spacingS
-
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: Theme.spacingS
-
-                            Image {
-                                source: "./VMonitorSRV.svg"
-                                sourceSize.width: 24
-                                sourceSize.height: 24
-                                width: 24
-                                height: 24
-                                fillMode: Image.PreserveAspectFit
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
-
-                            StyledText {
-                                text: "VMonitorSRV"
-                                font.pixelSize: Theme.fontSizeLarge + 2
-                                font.weight: Font.Bold
-                                color: Theme.surfaceText
-                            }
-
-                            Item { Layout.fillWidth: true }
-                        }
-
-                        StyledText {
-                            text: root.isOffline ? "Status: OFFLINE" : `IP: ${root.currentServerObj.host} • Up: ${root.sysInfo.uptime || "N/A"}`
-                            font.pixelSize: Theme.fontSizeSmall
-                            color: Theme.surfaceVariantText
-                        }
-
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: Theme.spacingXS
-
-                            DankButton {
-                                text: `${root.currentServerObj.name || root.currentServerObj.host} ▼`
-                                backgroundColor: root.showServerDropdown ? Theme.primary : Theme.surfaceContainerHighest
-                                textColor: root.showServerDropdown ? Theme.onPrimary : Theme.surfaceText
-                                onClicked: {
-                                    root.showServerDropdown = !root.showServerDropdown;
-                                    if (root.showServerDropdown) root.showAlertsDrawer = false;
-                                }
-                            }
-
-                            Item { Layout.fillWidth: true }
-
-                            DankButton {
-                                iconName: "warning"
-                                text: `Alerts: ${root.crossServerAlerts.length}`
-                                backgroundColor: root.showAlertsDrawer ? "#f59e0b" : Theme.surfaceContainerHighest
-                                textColor: root.showAlertsDrawer ? Theme.surfaceContainer : Theme.surfaceText
-                                onClicked: {
-                                    root.showAlertsDrawer = !root.showAlertsDrawer;
-                                    if (root.showAlertsDrawer) root.showServerDropdown = false;
-                                }
-                            }
-
-                            DankButton {
-                                iconName: "refresh"
-                                backgroundColor: Theme.surfaceContainerHighest
-                                textColor: Theme.surfaceText
-                                onClicked: root.fetchAllData()
-                            }
-
-                            DankButton {
-                                iconName: "settings"
-                                backgroundColor: Theme.surfaceContainerHighest
-                                textColor: Theme.surfaceText
-                                onClicked: {
-                                    if (typeof PopoutService !== "undefined" && PopoutService) {
-                                        PopoutService.showPluginSettings("vMonitorSRV");
-                                    }
-                                }
-                            }
+                HeaderCard {
+                    currentServerObj: root.currentServerObj
+                    isOffline: root.isOffline
+                    sysInfo: root.sysInfo
+                    showServerDropdown: root.showServerDropdown
+                    showAlertsDrawer: root.showAlertsDrawer
+                    crossServerAlertsCount: root.crossServerAlerts.length
+                    onToggleServerDropdown: {
+                        root.showServerDropdown = !root.showServerDropdown;
+                        if (root.showServerDropdown) root.showAlertsDrawer = false;
+                    }
+                    onToggleAlertsDrawer: {
+                        root.showAlertsDrawer = !root.showAlertsDrawer;
+                        if (root.showAlertsDrawer) root.showServerDropdown = false;
+                    }
+                    onRefreshClicked: root.fetchAllData()
+                    onSettingsClicked: {
+                        if (typeof PopoutService !== "undefined" && PopoutService) {
+                            PopoutService.showPluginSettings("vMonitorSRV");
                         }
                     }
                 }
 
-                StyledRect {
+                ServerSelectorDrawer {
                     visible: root.showServerDropdown
-                    Layout.fillWidth: true
-                    Layout.leftMargin: Theme.spacingM
-                    Layout.rightMargin: Theme.spacingM
-                    implicitHeight: Math.max(120, Math.min(220, root.serversList.length * 44 + 50))
-                    radius: Theme.cornerRadius
-                    color: Theme.surfaceContainerHighest
-
-                    ColumnLayout {
-                        anchors.fill: parent
-                        anchors.margins: Theme.spacingM
-                        spacing: Theme.spacingS
-
-                        RowLayout {
-                            Layout.fillWidth: true
-                            StyledText {
-                                text: "Select Monitored Server"
-                                font.pixelSize: Theme.fontSizeMedium
-                                font.weight: Font.Bold
-                                color: Theme.primary
-                            }
-                            Item { Layout.fillWidth: true }
-                            DankButton {
-                                text: "Edit Hosts File"
-                                backgroundColor: Theme.surfaceContainerHigh
-                                textColor: Theme.surfaceText
-                                onClicked: root.openHostsFileInEditor()
-                            }
-                        }
-
-                        ListView {
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            clip: true
-                            model: root.serversList
-                            spacing: Theme.spacingXS
-                            delegate: StyledRect {
-                                width: ListView.view.width
-                                height: 38
-                                radius: Theme.cornerRadiusSmall
-                                color: isSelected ? Theme.primary : Theme.surfaceContainerHigh
-
-                                property bool isSelected: index === root.activeServerIndex
-
-                                RowLayout {
-                                    anchors.fill: parent
-                                    anchors.margins: Theme.spacingS
-                                    spacing: Theme.spacingS
-
-                                    DankIcon {
-                                        name: isSelected ? "dns" : "server"
-                                        color: isSelected ? Theme.onPrimary : Theme.primary
-                                    }
-
-                                    StyledText {
-                                        text: `${modelData.name || modelData.host} (${modelData.host}:${modelData.port || "61208"})`
-                                        font.pixelSize: Theme.fontSizeSmall
-                                        font.weight: isSelected ? Font.Bold : Font.Normal
-                                        color: isSelected ? Theme.onPrimary : Theme.surfaceText
-                                        Layout.fillWidth: true
-                                        elide: Text.ElideRight
-                                    }
-                                }
-
-                                MouseArea {
-                                    anchors.fill: parent
-                                    onClicked: {
-                                        root.activeServerIndex = index;
-                                        root.showServerDropdown = false;
-                                        root.cpuHistory = [0, 0, 0, 0, 0];
-                                        root.ramHistory = [0, 0, 0, 0, 0];
-                                        root.netRxHistory = [0, 0, 0, 0, 0];
-                                        root.netTxHistory = [0, 0, 0, 0, 0];
-                                        root.fetchAllData();
-                                    }
-                                }
-                            }
-                        }
+                    serversList: root.serversList
+                    activeServerIndex: root.activeServerIndex
+                    onServerSelected: (index) => {
+                        root.activeServerIndex = index;
+                        root.showServerDropdown = false;
+                        root.cpuHistory = [0, 0, 0, 0, 0];
+                        root.ramHistory = [0, 0, 0, 0, 0];
+                        root.netRxHistory = [0, 0, 0, 0, 0];
+                        root.netTxHistory = [0, 0, 0, 0, 0];
+                        root.fetchAllData();
                     }
+                    onOpenHostsFile: root.openHostsFileInEditor()
                 }
 
-                StyledRect {
+                AlertsDrawer {
                     visible: root.showAlertsDrawer
-                    Layout.fillWidth: true
-                    Layout.leftMargin: Theme.spacingM
-                    Layout.rightMargin: Theme.spacingM
-                    implicitHeight: 120
-                    radius: Theme.cornerRadius
-                    color: Theme.surfaceContainerHighest
-
-                    ColumnLayout {
-                        anchors.fill: parent
-                        anchors.margins: Theme.spacingM
-                        spacing: Theme.spacingS
-
-                        StyledText {
-                            text: "Active Alerts across Connected Servers"
-                            font.pixelSize: Theme.fontSizeMedium
-                            font.weight: Font.Bold
-                            color: Theme.primary
-                        }
-
-                        ListView {
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            clip: true
-                            model: root.crossServerAlerts.length > 0 ? root.crossServerAlerts : [{ "serverName": "System", "log": "No active alerts across servers" }]
-                            spacing: Theme.spacingXS
-                            delegate: RowLayout {
-                                width: ListView.view.width
-                                spacing: Theme.spacingS
-                                StyledText {
-                                    text: `[${modelData.serverName || "Server"}]`
-                                    font.pixelSize: Theme.fontSizeSmall
-                                    font.weight: Font.Bold
-                                    color: "#f59e0b"
-                                }
-                                StyledText {
-                                    text: modelData.log || "Normal"
-                                    font.pixelSize: Theme.fontSizeSmall
-                                    color: Theme.surfaceText
-                                    elide: Text.ElideRight
-                                    Layout.fillWidth: true
-                                }
-                            }
-                        }
-                    }
+                    crossServerAlerts: root.crossServerAlerts
                 }
 
                 Flickable {
@@ -703,922 +526,76 @@ PluginComponent {
                         width: parent.width
                         spacing: Theme.spacingM
 
-                        StyledRect {
-                            Layout.fillWidth: true
-                            implicitHeight: infoCol.implicitHeight + Theme.spacingM * 2
-                            radius: Theme.cornerRadius
-                            color: Theme.surfaceContainerHigh
+                        InformationCard {
+                            sysInfo: root.sysInfo
+                            currentServerObj: root.currentServerObj
+                            isOffline: root.isOffline
+                            getOsIconNameFunc: root.getOsIconName
+                        }
 
-                            ColumnLayout {
-                                id: infoCol
-                                anchors.fill: parent
-                                anchors.margins: Theme.spacingM
-                                spacing: Theme.spacingS
+                        ResourcesCard {
+                            sysResources: root.sysResources
+                            enableGraphs: root.enableGraphs
+                            cpuHistory: root.cpuHistory
+                            getMetricColorFunc: root.getMetricColor
+                            getStorageColorFunc: root.getStorageColor
+                        }
 
-                                RowLayout {
-                                    Layout.fillWidth: true
-                                    spacing: Theme.spacingS
-
-                                    DankIcon {
-                                        name: root.getOsIconName(root.sysInfo.os_name)
-                                        size: 22
-                                        color: Theme.primary
-                                    }
-
-                                    StyledText {
-                                        text: root.sysInfo.hostname || root.currentServerObj.name || "server"
-                                        font.pixelSize: Theme.fontSizeLarge + 2
-                                        font.weight: Font.Bold
-                                        color: Theme.primary
-                                    }
-
-                                    Item { Layout.fillWidth: true }
-
-                                    StyledText {
-                                        text: root.isOffline ? "OFFLINE" : "ONLINE"
-                                        font.pixelSize: Theme.fontSizeSmall
-                                        font.weight: Font.Bold
-                                        color: root.isOffline ? Theme.error : Theme.primary
-                                    }
-                                }
-
-                                GridLayout {
-                                    columns: 2
-                                    rowSpacing: 4
-                                    columnSpacing: Theme.spacingM
-                                    Layout.fillWidth: true
-
-                                    StyledText { text: "CPU Model:"; font.pixelSize: Theme.fontSizeSmall; font.weight: Font.Bold; color: Theme.surfaceVariantText }
-                                    StyledText { text: root.sysInfo.cpu_name || "Intel(R) Core(TM) i5-8500 CPU @ 3.00GHz"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; elide: Text.ElideRight; Layout.fillWidth: true }
-
-                                    StyledText { text: "Hardware Model:"; font.pixelSize: Theme.fontSizeSmall; font.weight: Font.Bold; color: Theme.surfaceVariantText }
-                                    StyledText { text: root.sysInfo.hardware_model || "10SJS0FJ00"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; elide: Text.ElideRight; Layout.fillWidth: true }
-
-                                    StyledText { text: "OS Name:"; font.pixelSize: Theme.fontSizeSmall; font.weight: Font.Bold; color: Theme.surfaceVariantText }
-                                    RowLayout {
-                                        spacing: Theme.spacingXS
-                                        Layout.fillWidth: true
-                                        DankIcon {
-                                            name: root.getOsIconName(root.sysInfo.os_name)
-                                            size: 16
-                                            color: Theme.primary
-                                        }
-                                        StyledText {
-                                            text: root.sysInfo.os_name || "Fedora Linux 44 64bit"
-                                            font.pixelSize: Theme.fontSizeSmall
-                                            color: Theme.surfaceText
-                                            elide: Text.ElideRight
-                                            Layout.fillWidth: true
-                                        }
-                                    }
-
-                                    StyledText { text: "Uptime:"; font.pixelSize: Theme.fontSizeSmall; font.weight: Font.Bold; color: Theme.surfaceVariantText }
-                                    StyledText { text: root.sysInfo.uptime || "17 days, 17:36:20"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; elide: Text.ElideRight; Layout.fillWidth: true }
-                                }
+                        StorageCard {
+                            sysResources: root.sysResources
+                            subvolumesList: root.subvolumesList
+                            selectedSubvolName: root.selectedSubvolName
+                            selectedSubvolData: root.selectedSubvolData
+                            getStorageColorFunc: root.getStorageColor
+                            bytesToGbFunc: root.bytesToGb
+                            onSubvolSelected: (name, data) => {
+                                root.selectedSubvolName = name;
+                                root.selectedSubvolData = data;
                             }
                         }
 
-                        StyledRect {
-                            Layout.fillWidth: true
-                            implicitHeight: resCol.implicitHeight + Theme.spacingM * 2
-                            radius: Theme.cornerRadius
-                            color: Theme.surfaceContainerHigh
-
-                            ColumnLayout {
-                                id: resCol
-                                anchors.fill: parent
-                                anchors.margins: Theme.spacingM
-                                spacing: Theme.spacingS
-
-                                RowLayout {
-                                    Layout.fillWidth: true
-                                    DankIcon { name: "speed"; color: Theme.primary }
-                                    StyledText {
-                                        text: "Resources"
-                                        font.pixelSize: Theme.fontSizeLarge
-                                        font.weight: Font.Bold
-                                        color: Theme.surfaceText
-                                    }
-                                }
-
-                                RowLayout {
-                                    Layout.fillWidth: true
-                                    StyledText { text: "CPU Usage"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; font.weight: Font.Bold }
-                                    Item { Layout.fillWidth: true }
-                                    StyledText {
-                                        text: `${root.sysResources.cpu.usage_percent.toFixed(1)}% (${root.sysResources.cpu.temp_c || 0}°C)`
-                                        font.pixelSize: Theme.fontSizeSmall
-                                        color: root.getMetricColor(root.sysResources.cpu.usage_percent)
-                                        font.weight: Font.Bold
-                                    }
-                                }
-
-                                StyledRect {
-                                    Layout.fillWidth: true
-                                    height: 6
-                                    radius: 3
-                                    color: Theme.surfaceContainerHighest
-                                    StyledRect {
-                                        width: parent.width * Math.min(1.0, root.sysResources.cpu.usage_percent / 100.0)
-                                        height: parent.height
-                                        radius: parent.radius
-                                        color: root.getMetricColor(root.sysResources.cpu.usage_percent)
-                                    }
-                                }
-
-                                RowLayout {
-                                    Layout.fillWidth: true
-                                    StyledText { text: "RAM Usage"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; font.weight: Font.Bold }
-                                    Item { Layout.fillWidth: true }
-                                    StyledText {
-                                        text: `${root.sysResources.memory.usage_percent.toFixed(1)}%`
-                                        font.pixelSize: Theme.fontSizeSmall
-                                        color: root.getMetricColor(root.sysResources.memory.usage_percent)
-                                        font.weight: Font.Bold
-                                    }
-                                }
-
-                                StyledRect {
-                                    Layout.fillWidth: true
-                                    height: 6
-                                    radius: 3
-                                    color: Theme.surfaceContainerHighest
-                                    StyledRect {
-                                        width: parent.width * Math.min(1.0, root.sysResources.memory.usage_percent / 100.0)
-                                        height: parent.height
-                                        radius: parent.radius
-                                        color: root.getMetricColor(root.sysResources.memory.usage_percent)
-                                    }
-                                }
-
-                                RowLayout {
-                                    Layout.fillWidth: true
-                                    StyledText { text: "Disk Root (/)"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; font.weight: Font.Bold }
-                                    Item { Layout.fillWidth: true }
-                                    StyledText {
-                                        text: `${root.sysResources.disk_root.usage_percent.toFixed(1)}%`
-                                        font.pixelSize: Theme.fontSizeSmall
-                                        color: root.getStorageColor(root.sysResources.disk_root.usage_percent)
-                                        font.weight: Font.Bold
-                                    }
-                                }
-
-                                StyledRect {
-                                    Layout.fillWidth: true
-                                    height: 6
-                                    radius: 3
-                                    color: Theme.surfaceContainerHighest
-                                    StyledRect {
-                                        width: parent.width * Math.min(1.0, root.sysResources.disk_root.usage_percent / 100.0)
-                                        height: parent.height
-                                        radius: parent.radius
-                                        color: root.getStorageColor(root.sysResources.disk_root.usage_percent)
-                                    }
-                                }
-
-                                Item {
-                                    visible: root.enableGraphs
-                                    Layout.fillWidth: true
-                                    implicitHeight: 55
-
-                                    property int hoverIndex: -1
-                                    property real hoverX: 0
-                                    property real hoverY: 0
-                                    property string hoverText: ""
-
-                                    Canvas {
-                                        id: cpuCanvas
-                                        anchors.fill: parent
-                                        onPaint: {
-                                            var ctx = getContext("2d");
-                                            ctx.clearRect(0, 0, width, height);
-
-                                            var h = height - 12;
-                                            var w = width - 24;
-                                            var x0 = 20;
-
-                                            ctx.beginPath();
-                                            ctx.lineWidth = 1;
-                                            ctx.strokeStyle = Theme.surfaceContainerHighest;
-                                            ctx.moveTo(x0, 2);
-                                            ctx.lineTo(x0 + w, 2);
-                                            ctx.moveTo(x0, h / 2 + 2);
-                                            ctx.lineTo(x0 + w, h / 2 + 2);
-                                            ctx.moveTo(x0, h + 2);
-                                            ctx.lineTo(x0 + w, h + 2);
-                                            ctx.stroke();
-
-                                            ctx.fillStyle = Theme.surfaceVariantText;
-                                            ctx.font = "8px sans-serif";
-                                            ctx.fillText("100%", 0, 8);
-                                            ctx.fillText("50%", 0, h / 2 + 5);
-                                            ctx.fillText("0%", 0, h + 5);
-
-                                            if (!root.cpuHistory || root.cpuHistory.length < 2) return;
-
-                                            ctx.beginPath();
-                                            ctx.lineWidth = 2;
-                                            ctx.strokeStyle = root.getMetricColor(root.sysResources.cpu.usage_percent);
-
-                                            var step = w / (root.cpuHistory.length - 1);
-                                            for (var i = 0; i < root.cpuHistory.length; i++) {
-                                                var val = root.cpuHistory[i] || 0;
-                                                var y = h - (val / 100.0 * h) + 2;
-                                                var x = x0 + i * step;
-                                                if (i === 0) ctx.moveTo(x, y);
-                                                else ctx.lineTo(x, y);
-                                            }
-                                            ctx.stroke();
-
-                                            if (parent.hoverIndex >= 0 && parent.hoverIndex < root.cpuHistory.length) {
-                                                var hx = x0 + parent.hoverIndex * step;
-                                                var hval = root.cpuHistory[parent.hoverIndex] || 0;
-                                                var hy = h - (hval / 100.0 * h) + 2;
-
-                                                ctx.beginPath();
-                                                ctx.lineWidth = 1;
-                                                ctx.strokeStyle = Theme.primary;
-                                                ctx.moveTo(hx, 0);
-                                                ctx.lineTo(hx, h + 4);
-                                                ctx.stroke();
-
-                                                ctx.beginPath();
-                                                ctx.arc(hx, hy, 4, 0, 2 * Math.PI);
-                                                ctx.fillStyle = Theme.primary;
-                                                ctx.fill();
-                                            }
-                                        }
-
-                                        Connections {
-                                            target: root
-                                            function onCpuHistoryChanged() {
-                                                if (root.enableGraphs) cpuCanvas.requestPaint();
-                                            }
-                                        }
-                                    }
-
-                                    MouseArea {
-                                        anchors.fill: parent
-                                        hoverEnabled: true
-                                        onPositionChanged: (mouse) => {
-                                            var w = width - 24;
-                                            var x0 = 20;
-                                            if (mouse.x >= x0 && mouse.x <= x0 + w && root.cpuHistory.length > 1) {
-                                                var step = w / (root.cpuHistory.length - 1);
-                                                var idx = Math.round((mouse.x - x0) / step);
-                                                idx = Math.max(0, Math.min(root.cpuHistory.length - 1, idx));
-                                                parent.hoverIndex = idx;
-                                                parent.hoverX = x0 + idx * step;
-                                                var val = root.cpuHistory[idx] || 0;
-                                                parent.hoverY = (height - 12) - (val / 100.0 * (height - 12)) + 2;
-                                                parent.hoverText = `CPU: ${val.toFixed(1)}%`;
-                                            } else {
-                                                parent.hoverIndex = -1;
-                                            }
-                                            cpuCanvas.requestPaint();
-                                        }
-                                        onExited: {
-                                            parent.hoverIndex = -1;
-                                            cpuCanvas.requestPaint();
-                                        }
-                                    }
-
-                                    StyledRect {
-                                        visible: parent.hoverIndex >= 0
-                                        x: Math.min(parent.width - width - 4, Math.max(4, parent.hoverX - width / 2))
-                                        y: Math.max(0, parent.hoverY - 24)
-                                        width: hoverLabel.implicitWidth + 12
-                                        height: 20
-                                        radius: Theme.cornerRadiusSmall
-                                        color: Theme.surfaceContainerHighest
-                                        border.color: Theme.primary
-                                        border.width: 1
-
-                                        StyledText {
-                                            id: hoverLabel
-                                            anchors.centerIn: parent
-                                            text: parent.parent.hoverText
-                                            font.pixelSize: Theme.fontSizeSmall - 1
-                                            font.weight: Font.Bold
-                                            color: Theme.primary
-                                        }
-                                    }
-                                }
+                        NetworkCard {
+                            selectedNetId: root.selectedNetId
+                            selectedNetData: root.selectedNetData
+                            netRxHistory: root.netRxHistory
+                            enableGraphs: root.enableGraphs
+                            allInterfacesList: root.getAllInterfacesList()
+                            virtualNetQuery: root.virtualNetQuery
+                            getIpStringFunc: root.getIpString
+                            getRxRateStringFunc: root.getRxRateString
+                            getTxRateStringFunc: root.getTxRateString
+                            formatBytesRateFunc: root.formatBytesRate
+                            onSelectInterface: (ifName) => {
+                                root.selectedNetId = ifName;
+                                root.netRxHistory = [0, 0, 0, 0, 0];
+                                root.netTxHistory = [0, 0, 0, 0, 0];
+                                root.fetchSelectedNetDetail(ifName);
+                            }
+                            onUpdateVirtualNetQuery: (query) => {
+                                root.virtualNetQuery = query;
                             }
                         }
 
-                        StyledRect {
-                            Layout.fillWidth: true
-                            implicitHeight: stgCol.implicitHeight + Theme.spacingM * 2
-                            radius: Theme.cornerRadius
-                            color: Theme.surfaceContainerHigh
-
-                            ColumnLayout {
-                                id: stgCol
-                                anchors.fill: parent
-                                anchors.margins: Theme.spacingM
-                                spacing: Theme.spacingS
-
-                                RowLayout {
-                                    Layout.fillWidth: true
-                                    DankIcon { name: "pie_chart"; color: Theme.primary }
-                                    StyledText {
-                                        text: "Storage"
-                                        font.pixelSize: Theme.fontSizeLarge
-                                        font.weight: Font.Bold
-                                        color: Theme.surfaceText
-                                    }
-                                }
-
-                                RowLayout {
-                                    Layout.fillWidth: true
-                                    spacing: Theme.spacingM
-
-                                    DankIcon { name: "pie_chart"; color: root.getStorageColor(root.sysResources.disk_root.usage_percent) }
-
-                                    ColumnLayout {
-                                        spacing: 2
-                                        Layout.fillWidth: true
-                                        StyledText { text: "Root Disk Storage Pool"; font.pixelSize: Theme.fontSizeMedium; font.weight: Font.Bold; color: Theme.surfaceText }
-                                        StyledText {
-                                            text: `Used: ${root.sysResources.disk_root.usage_percent.toFixed(1)}% (${root.bytesToGb(root.sysResources.disk_root.used_bytes)} / ${root.bytesToGb(root.sysResources.disk_root.total_bytes)})`
-                                            font.pixelSize: Theme.fontSizeSmall
-                                            color: root.getStorageColor(root.sysResources.disk_root.usage_percent)
-                                            font.weight: Font.Bold
-                                            elide: Text.ElideRight
-                                        }
-                                    }
-                                }
-
-                                StyledText {
-                                    text: `Btrfs Subvolumes Wheel (${root.subvolumesList.length})`
-                                    font.pixelSize: Theme.fontSizeMedium
-                                    font.weight: Font.Bold
-                                    color: Theme.surfaceText
-                                }
-
-                                ListView {
-                                    id: subvolCarousel
-                                    Layout.fillWidth: true
-                                    implicitHeight: 75
-                                    orientation: ListView.Horizontal
-                                    clip: true
-                                    model: root.subvolumesList
-                                    spacing: Theme.spacingS
-
-                                    delegate: StyledRect {
-                                        width: 145
-                                        height: 68
-                                        radius: Theme.cornerRadius
-                                        color: isSelected ? root.getStorageColor(modelData.percent || 0) : Theme.surfaceContainerHighest
-
-                                        property string subName: modelData.name || "subvol"
-                                        property bool isSelected: root.selectedSubvolName === subName || (root.selectedSubvolName === "" && index === 0)
-
-                                        ColumnLayout {
-                                            anchors.fill: parent
-                                            anchors.margins: Theme.spacingS
-                                            spacing: 2
-
-                                            RowLayout {
-                                                Layout.fillWidth: true
-                                                DankIcon {
-                                                    name: "folder"
-                                                    color: isSelected ? Theme.onPrimary : root.getStorageColor(modelData.percent || 0)
-                                                }
-                                                StyledText {
-                                                    text: subName
-                                                    font.pixelSize: Theme.fontSizeSmall
-                                                    font.weight: Font.Bold
-                                                    color: isSelected ? Theme.onPrimary : Theme.surfaceText
-                                                    elide: Text.ElideRight
-                                                    Layout.fillWidth: true
-                                                }
-                                            }
-
-                                            StyledText {
-                                                text: `${(modelData.percent || 0).toFixed(1)}% (${root.bytesToGb(modelData.used_bytes)})`
-                                                font.pixelSize: Theme.fontSizeSmall - 1
-                                                color: isSelected ? Theme.onPrimary : root.getStorageColor(modelData.percent || 0)
-                                                font.weight: Font.Bold
-                                                elide: Text.ElideRight
-                                            }
-                                        }
-
-                                        MouseArea {
-                                            anchors.fill: parent
-                                            onClicked: {
-                                                root.selectedSubvolName = subName;
-                                                root.selectedSubvolData = modelData;
-                                            }
-                                        }
-                                    }
-                                }
-
-                                StyledRect {
-                                    Layout.fillWidth: true
-                                    implicitHeight: 85
-                                    radius: Theme.cornerRadiusSmall
-                                    color: Theme.surfaceContainerHighest
-
-                                    ColumnLayout {
-                                        anchors.fill: parent
-                                        anchors.margins: Theme.spacingS
-                                        spacing: Theme.spacingXS
-
-                                        RowLayout {
-                                            Layout.fillWidth: true
-                                            DankIcon { name: "info"; color: root.getStorageColor(root.selectedSubvolData.percent || 0) }
-                                            StyledText {
-                                                text: `Selected Subvolume: ${root.selectedSubvolData.name || root.selectedSubvolName || "root"}`
-                                                font.pixelSize: Theme.fontSizeMedium
-                                                font.weight: Font.Bold
-                                                color: Theme.surfaceText
-                                            }
-                                            Item { Layout.fillWidth: true }
-                                            StyledText {
-                                                text: `${(root.selectedSubvolData.percent || 0).toFixed(1)}%`
-                                                font.pixelSize: Theme.fontSizeMedium
-                                                font.weight: Font.Bold
-                                                color: root.getStorageColor(root.selectedSubvolData.percent || 0)
-                                            }
-                                        }
-
-                                        StyledText {
-                                            text: `Mount Point: ${root.selectedSubvolData.mount || "/"}`
-                                            font.pixelSize: Theme.fontSizeSmall
-                                            color: Theme.surfaceVariantText
-                                            elide: Text.ElideRight
-                                        }
-
-                                        StyledText {
-                                            text: `Used Capacity: ${root.bytesToGb(root.selectedSubvolData.used_bytes)}`
-                                            font.pixelSize: Theme.fontSizeSmall
-                                            color: root.getStorageColor(root.selectedSubvolData.percent || 0)
-                                            font.weight: Font.Bold
-                                        }
-                                    }
+                        ContainersCard {
+                            containerList: root.containerList
+                            expandedContainerId: root.expandedContainerId
+                            expandedContainerCpu: root.expandedContainerCpu
+                            expandedContainerHistory: root.expandedContainerHistory
+                            enableGraphs: root.enableGraphs
+                            getMetricColorFunc: root.getMetricColor
+                            onToggleExpandContainer: (cId) => {
+                                if (root.expandedContainerId === cId) {
+                                    root.expandedContainerId = "";
+                                } else {
+                                    root.expandedContainerId = cId;
+                                    root.expandedContainerCpu = 0;
+                                    root.expandedContainerHistory = [0, 0, 0, 0, 0];
+                                    root.fetchContainerCpu(cId);
                                 }
                             }
-                        }
-
-                        StyledRect {
-                            Layout.fillWidth: true
-                            implicitHeight: netCol.implicitHeight + Theme.spacingM * 2
-                            radius: Theme.cornerRadius
-                            color: Theme.surfaceContainerHigh
-
-                            ColumnLayout {
-                                id: netCol
-                                anchors.fill: parent
-                                anchors.margins: Theme.spacingM
-                                spacing: Theme.spacingS
-
-                                RowLayout {
-                                    Layout.fillWidth: true
-                                    DankIcon { name: "lan"; color: Theme.primary }
-                                    StyledText {
-                                        text: "Network"
-                                        font.pixelSize: Theme.fontSizeLarge
-                                        font.weight: Font.Bold
-                                        color: Theme.surfaceText
-                                    }
-                                }
-
-                                RowLayout {
-                                    Layout.fillWidth: true
-
-                                    DankIcon { name: "lan"; color: Theme.primary }
-
-                                    ColumnLayout {
-                                        spacing: 1
-                                        StyledText {
-                                            text: `Interface: ${root.selectedNetId} (IP: ${root.getIpString(root.selectedNetData)})`
-                                            font.pixelSize: Theme.fontSizeSmall
-                                            font.weight: Font.Bold
-                                            color: Theme.surfaceText
-                                        }
-                                        StyledText {
-                                            text: `RX Rate: ${root.getRxRateString(root.selectedNetData)}  |  TX Rate: ${root.getTxRateString(root.selectedNetData)}`
-                                            font.pixelSize: Theme.fontSizeSmall - 1
-                                            color: Theme.surfaceVariantText
-                                        }
-                                    }
-                                }
-
-                                Item {
-                                    visible: root.enableGraphs
-                                    Layout.fillWidth: true
-                                    implicitHeight: 65
-
-                                    property int hoverIndex: -1
-                                    property real hoverX: 0
-                                    property real hoverY: 0
-                                    property string hoverText: ""
-
-                                    Canvas {
-                                        id: netCanvas
-                                        anchors.fill: parent
-                                        onPaint: {
-                                            var ctx = getContext("2d");
-                                            ctx.clearRect(0, 0, width, height);
-
-                                            var h = height - 12;
-                                            var w = width - 40;
-                                            var x0 = 36;
-
-                                            var maxRx = 1;
-                                            for (var i = 0; i < root.netRxHistory.length; i++) {
-                                                if (root.netRxHistory[i] > maxRx) maxRx = root.netRxHistory[i];
-                                            }
-
-                                            ctx.beginPath();
-                                            ctx.lineWidth = 1;
-                                            ctx.strokeStyle = Theme.surfaceContainerHighest;
-                                            ctx.moveTo(x0, 2);
-                                            ctx.lineTo(x0 + w, 2);
-                                            ctx.moveTo(x0, h / 2 + 2);
-                                            ctx.lineTo(x0 + w, h / 2 + 2);
-                                            ctx.moveTo(x0, h + 2);
-                                            ctx.lineTo(x0 + w, h + 2);
-                                            ctx.stroke();
-
-                                            ctx.fillStyle = Theme.surfaceVariantText;
-                                            ctx.font = "8px sans-serif";
-                                            ctx.fillText(root.formatBytesRate(maxRx * 1024), 0, 8);
-                                            ctx.fillText(root.formatBytesRate((maxRx / 2) * 1024), 0, h / 2 + 5);
-                                            ctx.fillText("0 B/s", 0, h + 5);
-
-                                            if (!root.netRxHistory || root.netRxHistory.length < 2) return;
-
-                                            ctx.beginPath();
-                                            ctx.lineWidth = 2;
-                                            ctx.strokeStyle = Theme.primary;
-
-                                            var step = w / (root.netRxHistory.length - 1);
-                                            for (var j = 0; j < root.netRxHistory.length; j++) {
-                                                var val = root.netRxHistory[j] || 0;
-                                                var y = h - (val / maxRx * h) + 2;
-                                                var x = x0 + j * step;
-                                                if (j === 0) ctx.moveTo(x, y);
-                                                else ctx.lineTo(x, y);
-                                            }
-                                            ctx.stroke();
-
-                                            if (parent.hoverIndex >= 0 && parent.hoverIndex < root.netRxHistory.length) {
-                                                var hx = x0 + parent.hoverIndex * step;
-                                                var hval = root.netRxHistory[parent.hoverIndex] || 0;
-                                                var hy = h - (hval / maxRx * h) + 2;
-
-                                                ctx.beginPath();
-                                                ctx.lineWidth = 1;
-                                                ctx.strokeStyle = Theme.primary;
-                                                ctx.moveTo(hx, 0);
-                                                ctx.lineTo(hx, h + 4);
-                                                ctx.stroke();
-
-                                                ctx.beginPath();
-                                                ctx.arc(hx, hy, 4, 0, 2 * Math.PI);
-                                                ctx.fillStyle = Theme.primary;
-                                                ctx.fill();
-                                            }
-                                        }
-
-                                        Connections {
-                                            target: root
-                                            function onNetRxHistoryChanged() {
-                                                if (root.enableGraphs) netCanvas.requestPaint();
-                                            }
-                                        }
-                                    }
-
-                                    MouseArea {
-                                        anchors.fill: parent
-                                        hoverEnabled: true
-                                        onPositionChanged: (mouse) => {
-                                            var w = width - 40;
-                                            var x0 = 36;
-                                            if (mouse.x >= x0 && mouse.x <= x0 + w && root.netRxHistory.length > 1) {
-                                                var step = w / (root.netRxHistory.length - 1);
-                                                var idx = Math.round((mouse.x - x0) / step);
-                                                idx = Math.max(0, Math.min(root.netRxHistory.length - 1, idx));
-                                                parent.hoverIndex = idx;
-                                                parent.hoverX = x0 + idx * step;
-                                                var valKb = root.netRxHistory[idx] || 0;
-                                                var maxRx = 1;
-                                                for (var i = 0; i < root.netRxHistory.length; i++) {
-                                                    if (root.netRxHistory[i] > maxRx) maxRx = root.netRxHistory[i];
-                                                }
-                                                parent.hoverY = (height - 12) - (valKb / maxRx * (height - 12)) + 2;
-                                                parent.hoverText = `RX: ${root.formatBytesRate(valKb * 1024)}`;
-                                            } else {
-                                                parent.hoverIndex = -1;
-                                            }
-                                            netCanvas.requestPaint();
-                                        }
-                                        onExited: {
-                                            parent.hoverIndex = -1;
-                                            netCanvas.requestPaint();
-                                        }
-                                    }
-
-                                    StyledRect {
-                                        visible: parent.hoverIndex >= 0
-                                        x: Math.min(parent.width - width - 4, Math.max(4, parent.hoverX - width / 2))
-                                        y: Math.max(0, parent.hoverY - 24)
-                                        width: netHoverLabel.implicitWidth + 12
-                                        height: 20
-                                        radius: Theme.cornerRadiusSmall
-                                        color: Theme.surfaceContainerHighest
-                                        border.color: Theme.primary
-                                        border.width: 1
-
-                                        StyledText {
-                                            id: netHoverLabel
-                                            anchors.centerIn: parent
-                                            text: parent.parent.hoverText
-                                            font.pixelSize: Theme.fontSizeSmall - 1
-                                            font.weight: Font.Bold
-                                            color: Theme.primary
-                                        }
-                                    }
-                                }
-
-                                StyledText {
-                                    text: `Select Interface to Graph (${root.getAllInterfacesList().length})`
-                                    font.pixelSize: Theme.fontSizeMedium
-                                    font.weight: Font.Bold
-                                    color: Theme.surfaceText
-                                }
-
-                                DankTextField {
-                                    Layout.fillWidth: true
-                                    placeholderText: "Filter physical & virtual interfaces..."
-                                    text: root.virtualNetQuery
-                                    onTextChanged: root.virtualNetQuery = text
-                                }
-
-                                ListView {
-                                    Layout.fillWidth: true
-                                    implicitHeight: Math.min(150, Math.max(45, root.getAllInterfacesList().length * 42))
-                                    clip: true
-                                    model: root.getAllInterfacesList()
-                                    spacing: Theme.spacingXS
-
-                                    delegate: StyledRect {
-                                        width: ListView.view.width
-                                        height: 38
-                                        radius: Theme.cornerRadiusSmall
-                                        color: isSelected ? Theme.surfaceContainerHighest : Theme.surfaceContainerHighest
-
-                                        property string itemIfName: modelData.name || `if${index}`
-                                        property bool isVirt: modelData.isVirtual
-                                        property bool isSelected: root.selectedNetId === itemIfName
-
-                                        RowLayout {
-                                            anchors.fill: parent
-                                            anchors.margins: Theme.spacingS
-
-                                            DankIcon {
-                                                name: isSelected ? "check_circle" : (isVirt ? "hub" : "lan")
-                                                color: isSelected ? Theme.primary : Theme.surfaceVariantText
-                                            }
-
-                                            StyledText {
-                                                text: `${itemIfName} ${isVirt ? "(Virtual)" : "(Physical)"}`
-                                                font.pixelSize: Theme.fontSizeSmall
-                                                font.weight: isSelected ? Font.Bold : Font.Normal
-                                                color: isSelected ? Theme.primary : Theme.surfaceText
-                                                Layout.fillWidth: true
-                                            }
-
-                                            StyledRect {
-                                                width: 60
-                                                height: 26
-                                                radius: Theme.cornerRadiusSmall
-                                                color: isSelected ? Theme.primary : Theme.surfaceContainerHighest
-
-                                                StyledText {
-                                                    anchors.centerIn: parent
-                                                    text: isSelected ? "Active" : "Select"
-                                                    font.pixelSize: Theme.fontSizeSmall - 1
-                                                    font.weight: isSelected ? Font.Bold : Font.Normal
-                                                    color: isSelected ? Theme.onPrimary : Theme.surfaceText
-                                                }
-                                            }
-                                        }
-
-                                        MouseArea {
-                                            anchors.fill: parent
-                                            onClicked: {
-                                                root.selectedNetId = itemIfName;
-                                                root.netRxHistory = [0, 0, 0, 0, 0];
-                                                root.netTxHistory = [0, 0, 0, 0, 0];
-                                                root.fetchSelectedNetDetail(itemIfName);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        StyledRect {
-                            Layout.fillWidth: true
-                            implicitHeight: cntCol.implicitHeight + Theme.spacingM * 2
-                            radius: Theme.cornerRadius
-                            color: Theme.surfaceContainerHigh
-
-                            ColumnLayout {
-                                id: cntCol
-                                anchors.fill: parent
-                                anchors.margins: Theme.spacingM
-                                spacing: Theme.spacingS
-
-                                RowLayout {
-                                    Layout.fillWidth: true
-                                    DankIcon { name: "layers"; color: Theme.primary }
-                                    StyledText {
-                                        text: "Containers"
-                                        font.pixelSize: Theme.fontSizeLarge
-                                        font.weight: Font.Bold
-                                        color: Theme.surfaceText
-                                    }
-                                }
-
-                                StyledText {
-                                    text: `Podman Containers (${root.containerList.length})`
-                                    font.pixelSize: Theme.fontSizeMedium
-                                    font.weight: Font.Bold
-                                    color: Theme.surfaceText
-                                }
-
-                                ListView {
-                                    Layout.fillWidth: true
-                                    implicitHeight: Math.min(260, Math.max(60, root.containerList.length * (isExpanded ? 120 : 62)))
-                                    clip: true
-                                    model: root.containerList
-                                    spacing: Theme.spacingS
-
-                                    delegate: StyledRect {
-                                        width: ListView.view.width
-                                        height: isExpanded ? 115 : 58
-                                        radius: Theme.cornerRadiusSmall
-                                        color: modelData.status === "running" ? Theme.surfaceContainerHighest : Theme.surfaceContainer
-
-                                        property string cId: modelData.id || ""
-                                        property bool isExpanded: root.expandedContainerId === cId
-
-                                        ColumnLayout {
-                                            anchors.fill: parent
-                                            anchors.margins: Theme.spacingS
-                                            spacing: Theme.spacingXS
-
-                                            RowLayout {
-                                                Layout.fillWidth: true
-                                                spacing: Theme.spacingS
-
-                                                DankIcon {
-                                                    name: modelData.status === "running" ? "play_circle" : "error"
-                                                    color: modelData.status === "running" ? Theme.primary : Theme.error
-                                                }
-
-                                                ColumnLayout {
-                                                    spacing: 1
-                                                    Layout.fillWidth: true
-
-                                                    StyledText {
-                                                        text: modelData.name || cId || "Container"
-                                                        font.pixelSize: Theme.fontSizeMedium
-                                                        color: Theme.surfaceText
-                                                        font.weight: Font.Bold
-                                                        elide: Text.ElideRight
-                                                    }
-
-                                                    StyledText {
-                                                        text: `${modelData.image || "image"} • ${modelData.memory_usage || "N/A"}`
-                                                        font.pixelSize: Theme.fontSizeSmall
-                                                        color: Theme.surfaceVariantText
-                                                        elide: Text.ElideRight
-                                                    }
-                                                }
-
-                                                DankButton {
-                                                    iconName: isExpanded ? "expand_less" : "expand_more"
-                                                    backgroundColor: Theme.surfaceContainerHigh
-                                                    textColor: Theme.surfaceText
-                                                    onClicked: {
-                                                        if (isExpanded) {
-                                                            root.expandedContainerId = "";
-                                                        } else {
-                                                            root.expandedContainerId = cId;
-                                                            root.expandedContainerCpu = 0;
-                                                            root.expandedContainerHistory = [0, 0, 0, 0, 0];
-                                                            root.fetchContainerCpu(cId);
-                                                        }
-                                                    }
-                                                }
-
-                                                DankButton {
-                                                    iconName: "content_copy"
-                                                    backgroundColor: Theme.surfaceContainerHigh
-                                                    textColor: Theme.surfaceText
-                                                    onClicked: root.copyContainerId(cId)
-                                                }
-
-                                                DankButton {
-                                                    iconName: "restart_alt"
-                                                    backgroundColor: Theme.surfaceContainerHigh
-                                                    textColor: Theme.surfaceText
-                                                    onClicked: root.restartContainer(cId)
-                                                }
-
-                                                DankButton {
-                                                    iconName: "stop"
-                                                    backgroundColor: Theme.surfaceContainerHigh
-                                                    textColor: Theme.surfaceText
-                                                    onClicked: root.stopContainer(cId)
-                                                }
-                                            }
-
-                                            ColumnLayout {
-                                                visible: isExpanded
-                                                Layout.fillWidth: true
-                                                spacing: 2
-
-                                                RowLayout {
-                                                    Layout.fillWidth: true
-                                                    StyledText {
-                                                        text: "Live CPU Usage:"
-                                                        font.pixelSize: Theme.fontSizeSmall
-                                                        color: Theme.surfaceText
-                                                    }
-
-                                                    StyledRect {
-                                                        Layout.fillWidth: true
-                                                        height: 6
-                                                        radius: 3
-                                                        color: Theme.surfaceContainerHighest
-
-                                                        StyledRect {
-                                                            width: parent.width * Math.min(1.0, root.expandedContainerCpu / 100.0)
-                                                            height: parent.height
-                                                            radius: parent.radius
-                                                            color: root.getMetricColor(root.expandedContainerCpu)
-                                                        }
-                                                    }
-
-                                                    StyledText {
-                                                        text: `${root.expandedContainerCpu.toFixed(1)}%`
-                                                        font.pixelSize: Theme.fontSizeSmall
-                                                        font.weight: Font.Bold
-                                                        color: root.getMetricColor(root.expandedContainerCpu)
-                                                    }
-                                                }
-
-                                                Canvas {
-                                                    visible: root.enableGraphs
-                                                    Layout.fillWidth: true
-                                                    implicitHeight: 25
-                                                    onPaint: {
-                                                        var ctx = getContext("2d");
-                                                        ctx.clearRect(0, 0, width, height);
-
-                                                        ctx.beginPath();
-                                                        ctx.lineWidth = 1;
-                                                        ctx.strokeStyle = Theme.surfaceContainerHighest;
-                                                        ctx.moveTo(0, height - 2);
-                                                        ctx.lineTo(width, height - 2);
-                                                        ctx.stroke();
-
-                                                        if (!root.expandedContainerHistory || root.expandedContainerHistory.length < 2) return;
-
-                                                        ctx.beginPath();
-                                                        ctx.lineWidth = 2;
-                                                        ctx.strokeStyle = root.getMetricColor(root.expandedContainerCpu);
-
-                                                        var step = width / (root.expandedContainerHistory.length - 1);
-                                                        for (var i = 0; i < root.expandedContainerHistory.length; i++) {
-                                                            var val = root.expandedContainerHistory[i] || 0;
-                                                            var y = height - (val / 100.0 * (height - 4)) - 2;
-                                                            var x = i * step;
-                                                            if (i === 0) ctx.moveTo(x, y);
-                                                            else ctx.lineTo(x, y);
-                                                        }
-                                                        ctx.stroke();
-                                                    }
-
-                                                    Connections {
-                                                        target: root
-                                                        function onExpandedContainerHistoryChanged() {
-                                                            if (root.enableGraphs) parent.requestPaint();
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
+                            onCopyContainerId: (cId) => root.copyContainerId(cId)
+                            onRestartContainer: (cId) => root.restartContainer(cId)
+                            onStopContainer: (cId) => root.stopContainer(cId)
                         }
                     }
                 }

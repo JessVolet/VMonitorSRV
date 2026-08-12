@@ -1,0 +1,167 @@
+import QtQuick
+import QtQuick.Layouts
+import qs.Common
+import qs.Widgets
+
+StyledRect {
+    id: root
+
+    property var sysResources: ({ "disk_root": { "usage_percent": 0, "used_bytes": 0, "total_bytes": 0 } })
+    property var subvolumesList: []
+    property string selectedSubvolName: ""
+    property var selectedSubvolData: ({})
+    property var getStorageColorFunc: function(val) { return Theme.primary; }
+    property var bytesToGbFunc: function(b) { return "0.0 GB"; }
+
+    signal subvolSelected(string name, var data)
+
+    Layout.fillWidth: true
+    implicitHeight: stgCol.implicitHeight + Theme.spacingM * 2
+    radius: Theme.cornerRadius
+    color: Theme.surfaceContainerHigh
+
+    ColumnLayout {
+        id: stgCol
+        anchors.fill: parent
+        anchors.margins: Theme.spacingM
+        spacing: Theme.spacingS
+
+        RowLayout {
+            Layout.fillWidth: true
+            DankIcon { name: "pie_chart"; color: Theme.primary }
+            StyledText {
+                text: "Storage"
+                font.pixelSize: Theme.fontSizeLarge
+                font.weight: Font.Bold
+                color: Theme.surfaceText
+            }
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: Theme.spacingM
+
+            DankIcon { name: "pie_chart"; color: root.getStorageColorFunc(root.sysResources.disk_root.usage_percent || 0) }
+
+            ColumnLayout {
+                spacing: 2
+                Layout.fillWidth: true
+                StyledText { text: "Root Disk Storage Pool"; font.pixelSize: Theme.fontSizeMedium; font.weight: Font.Bold; color: Theme.surfaceText }
+                StyledText {
+                    text: `Used: ${(root.sysResources.disk_root.usage_percent || 0).toFixed(1)}% (${root.bytesToGbFunc(root.sysResources.disk_root.used_bytes)} / ${root.bytesToGbFunc(root.sysResources.disk_root.total_bytes)})`
+                    font.pixelSize: Theme.fontSizeSmall
+                    color: root.getStorageColorFunc(root.sysResources.disk_root.usage_percent || 0)
+                    font.weight: Font.Bold
+                    elide: Text.ElideRight
+                }
+            }
+        }
+
+        StyledText {
+            text: `Btrfs Subvolumes Wheel (${root.subvolumesList.length})`
+            font.pixelSize: Theme.fontSizeMedium
+            font.weight: Font.Bold
+            color: Theme.surfaceText
+        }
+
+        ListView {
+            id: subvolCarousel
+            Layout.fillWidth: true
+            implicitHeight: 75
+            orientation: ListView.Horizontal
+            clip: true
+            model: root.subvolumesList
+            spacing: Theme.spacingS
+
+            delegate: StyledRect {
+                width: 145
+                height: 68
+                radius: Theme.cornerRadius
+                color: isSelected ? root.getStorageColorFunc(modelData.percent || 0) : Theme.surfaceContainerHighest
+
+                property string subName: modelData.name || "subvol"
+                property bool isSelected: root.selectedSubvolName === subName || (root.selectedSubvolName === "" && index === 0)
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: Theme.spacingS
+                    spacing: 2
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        DankIcon {
+                            name: "folder"
+                            color: isSelected ? Theme.onPrimary : root.getStorageColorFunc(modelData.percent || 0)
+                        }
+                        StyledText {
+                            text: subName
+                            font.pixelSize: Theme.fontSizeSmall
+                            font.weight: Font.Bold
+                            color: isSelected ? Theme.onPrimary : Theme.surfaceText
+                            elide: Text.ElideRight
+                            Layout.fillWidth: true
+                        }
+                    }
+
+                    StyledText {
+                        text: `${(modelData.percent || 0).toFixed(1)}% (${root.bytesToGbFunc(modelData.used_bytes)})`
+                        font.pixelSize: Theme.fontSizeSmall - 1
+                        color: isSelected ? Theme.onPrimary : root.getStorageColorFunc(modelData.percent || 0)
+                        font.weight: Font.Bold
+                        elide: Text.ElideRight
+                    }
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: root.subvolSelected(subName, modelData)
+                }
+            }
+        }
+
+        StyledRect {
+            Layout.fillWidth: true
+            implicitHeight: 85
+            radius: Theme.cornerRadiusSmall
+            color: Theme.surfaceContainerHighest
+
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.margins: Theme.spacingS
+                spacing: Theme.spacingXS
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    DankIcon { name: "info"; color: root.getStorageColorFunc(root.selectedSubvolData.percent || 0) }
+                    StyledText {
+                        text: `Selected Subvolume: ${root.selectedSubvolData.name || root.selectedSubvolName || "root"}`
+                        font.pixelSize: Theme.fontSizeMedium
+                        font.weight: Font.Bold
+                        color: Theme.surfaceText
+                    }
+                    Item { Layout.fillWidth: true }
+                    StyledText {
+                        text: `${(root.selectedSubvolData.percent || 0).toFixed(1)}%`
+                        font.pixelSize: Theme.fontSizeMedium
+                        font.weight: Font.Bold
+                        color: root.getStorageColorFunc(root.selectedSubvolData.percent || 0)
+                    }
+                }
+
+                StyledText {
+                    text: `Mount Point: ${root.selectedSubvolData.mount || "/"}`
+                    font.pixelSize: Theme.fontSizeSmall
+                    color: Theme.surfaceVariantText
+                    elide: Text.ElideRight
+                }
+
+                StyledText {
+                    text: `Used Capacity: ${root.bytesToGbFunc(root.selectedSubvolData.used_bytes)}`
+                    font.pixelSize: Theme.fontSizeSmall
+                    color: root.getStorageColorFunc(root.selectedSubvolData.percent || 0)
+                    font.weight: Font.Bold
+                }
+            }
+        }
+    }
+}

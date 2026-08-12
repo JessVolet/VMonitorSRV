@@ -461,8 +461,6 @@ PluginComponent {
     popoutContent: Component {
         PopoutComponent {
             id: popout
-            headerText: "VMonitorSRV"
-            detailsText: root.isOffline ? "Status: OFFLINE" : `IP: ${root.currentServerObj.host} • Up: ${root.sysInfo.uptime || "N/A"}`
             showCloseButton: true
 
             ColumnLayout {
@@ -473,53 +471,88 @@ PluginComponent {
                     Layout.fillWidth: true
                     Layout.leftMargin: Theme.spacingM
                     Layout.rightMargin: Theme.spacingM
-                    implicitHeight: topBarRow.implicitHeight + Theme.spacingS * 2
+                    implicitHeight: headerCol.implicitHeight + Theme.spacingM * 2
                     radius: Theme.cornerRadius
                     color: Theme.surfaceContainerHigh
 
-                    RowLayout {
-                        id: topBarRow
+                    ColumnLayout {
+                        id: headerCol
                         anchors.fill: parent
-                        anchors.margins: Theme.spacingS
+                        anchors.margins: Theme.spacingM
                         spacing: Theme.spacingS
 
-                        DankButton {
-                            text: `${root.currentServerObj.name || root.currentServerObj.host} ▼`
-                            backgroundColor: root.showServerDropdown ? Theme.primary : Theme.surfaceContainerHighest
-                            textColor: root.showServerDropdown ? Theme.onPrimary : Theme.surfaceText
-                            onClicked: {
-                                root.showServerDropdown = !root.showServerDropdown;
-                                if (root.showServerDropdown) root.showAlertsDrawer = false;
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: Theme.spacingS
+
+                            Image {
+                                source: "./VMonitorSRV.svg"
+                                sourceSize.width: 24
+                                sourceSize.height: 24
+                                width: 24
+                                height: 24
+                                fillMode: Image.PreserveAspectFit
+                                anchors.verticalCenter: parent.verticalCenter
                             }
-                        }
 
-                        Item { Layout.fillWidth: true }
-
-                        DankButton {
-                            iconName: "warning"
-                            text: `Alerts: ${root.crossServerAlerts.length}`
-                            backgroundColor: root.showAlertsDrawer ? "#f59e0b" : Theme.surfaceContainerHighest
-                            textColor: root.showAlertsDrawer ? Theme.surfaceContainer : Theme.surfaceText
-                            onClicked: {
-                                root.showAlertsDrawer = !root.showAlertsDrawer;
-                                if (root.showAlertsDrawer) root.showServerDropdown = false;
+                            StyledText {
+                                text: "VMonitorSRV"
+                                font.pixelSize: Theme.fontSizeLarge + 2
+                                font.weight: Font.Bold
+                                color: Theme.surfaceText
                             }
+
+                            Item { Layout.fillWidth: true }
                         }
 
-                        DankButton {
-                            iconName: "refresh"
-                            backgroundColor: Theme.surfaceContainerHighest
-                            textColor: Theme.surfaceText
-                            onClicked: root.fetchAllData()
+                        StyledText {
+                            text: root.isOffline ? "Status: OFFLINE" : `IP: ${root.currentServerObj.host} • Up: ${root.sysInfo.uptime || "N/A"}`
+                            font.pixelSize: Theme.fontSizeSmall
+                            color: Theme.surfaceVariantText
                         }
 
-                        DankButton {
-                            iconName: "settings"
-                            backgroundColor: Theme.surfaceContainerHighest
-                            textColor: Theme.surfaceText
-                            onClicked: {
-                                if (typeof PopoutService !== "undefined" && PopoutService) {
-                                    PopoutService.showPluginSettings("vMonitorSRV");
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: Theme.spacingS
+
+                            DankButton {
+                                text: `${root.currentServerObj.name || root.currentServerObj.host} ▼`
+                                backgroundColor: root.showServerDropdown ? Theme.primary : Theme.surfaceContainerHighest
+                                textColor: root.showServerDropdown ? Theme.onPrimary : Theme.surfaceText
+                                onClicked: {
+                                    root.showServerDropdown = !root.showServerDropdown;
+                                    if (root.showServerDropdown) root.showAlertsDrawer = false;
+                                }
+                            }
+
+                            Item { Layout.fillWidth: true }
+
+                            DankButton {
+                                iconName: "warning"
+                                text: `Alerts: ${root.crossServerAlerts.length}`
+                                backgroundColor: root.showAlertsDrawer ? "#f59e0b" : Theme.surfaceContainerHighest
+                                textColor: root.showAlertsDrawer ? Theme.surfaceContainer : Theme.surfaceText
+                                onClicked: {
+                                    root.showAlertsDrawer = !root.showAlertsDrawer;
+                                    if (root.showAlertsDrawer) root.showServerDropdown = false;
+                                }
+                            }
+
+                            DankButton {
+                                iconName: "refresh"
+                                backgroundColor: Theme.surfaceContainerHighest
+                                textColor: Theme.surfaceText
+                                onClicked: root.fetchAllData()
+                            }
+
+                            DankButton {
+                                iconName: "settings"
+                                backgroundColor: Theme.surfaceContainerHighest
+                                textColor: Theme.surfaceText
+                                onClicked: {
+                                    if (typeof PopoutService !== "undefined" && PopoutService) {
+                                        PopoutService.showPluginSettings("vMonitorSRV");
+                                    }
                                 }
                             }
                         }

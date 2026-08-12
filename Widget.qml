@@ -479,7 +479,11 @@ PluginComponent {
                     onRefreshClicked: root.fetchAllData()
                     onSettingsClicked: {
                         if (typeof PopoutService !== "undefined" && PopoutService) {
-                            PopoutService.showPluginSettings("vMonitorSRV");
+                            if (typeof PopoutService.openSettingsWithTab === "function") {
+                                PopoutService.openSettingsWithTab("plugins");
+                            } else if (typeof PopoutService.openSettings === "function") {
+                                PopoutService.openSettings();
+                            }
                         }
                     }
                 }

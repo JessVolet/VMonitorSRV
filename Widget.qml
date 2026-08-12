@@ -471,6 +471,8 @@ PluginComponent {
 
                 RowLayout {
                     Layout.fillWidth: true
+                    Layout.leftMargin: Theme.spacingM
+                    Layout.rightMargin: Theme.spacingM
                     spacing: Theme.spacingS
 
                     DankButton {
@@ -518,6 +520,8 @@ PluginComponent {
                 StyledRect {
                     visible: root.showServerDropdown
                     Layout.fillWidth: true
+                    Layout.leftMargin: Theme.spacingM
+                    Layout.rightMargin: Theme.spacingM
                     implicitHeight: Math.max(120, Math.min(220, root.serversList.length * 44 + 50))
                     radius: Theme.cornerRadius
                     color: Theme.surfaceContainerHighest
@@ -598,6 +602,8 @@ PluginComponent {
                 StyledRect {
                     visible: root.showAlertsDrawer
                     Layout.fillWidth: true
+                    Layout.leftMargin: Theme.spacingM
+                    Layout.rightMargin: Theme.spacingM
                     implicitHeight: 120
                     radius: Theme.cornerRadius
                     color: Theme.surfaceContainerHighest
@@ -643,6 +649,8 @@ PluginComponent {
 
                 Flickable {
                     Layout.fillWidth: true
+                    Layout.leftMargin: Theme.spacingM
+                    Layout.rightMargin: Theme.spacingM
                     implicitHeight: 480
                     height: 480
                     contentHeight: mainContent.implicitHeight

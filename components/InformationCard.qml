@@ -9,7 +9,6 @@ StyledRect {
     property var sysInfo: ({})
     property var currentServerObj: ({})
     property bool isOffline: false
-    property var getOsIconNameFunc: function(os) { return "dns"; }
 
     Layout.fillWidth: true
     implicitHeight: infoCol.implicitHeight + Theme.spacingM * 2
@@ -27,7 +26,7 @@ StyledRect {
             spacing: Theme.spacingS
 
             DankIcon {
-                name: root.getOsIconNameFunc(root.sysInfo.os_name)
+                name: "dns"
                 size: 22
                 color: Theme.primary
             }
@@ -66,7 +65,7 @@ StyledRect {
                 spacing: Theme.spacingXS
                 Layout.fillWidth: true
                 DankIcon {
-                    name: root.getOsIconNameFunc(root.sysInfo.os_name)
+                    name: "dns"
                     size: 16
                     color: Theme.primary
                 }

@@ -31,8 +31,8 @@ PluginComponent {
             if (Array.isArray(parsed) && parsed.length > 0) return parsed;
         } catch (e) {}
         return [
-            { "name": "Fedora Primary", "host": "192.168.100.200", "port": "61208", "icon": "dns" },
-            { "name": "VirtualMachine", "host": "10.190.217.209", "port": "61208", "icon": "computer" }
+            { "name": "Fedora Primary", "host": "192.168.100.200", "port": "61208" },
+            { "name": "VirtualMachine", "host": "10.190.217.209", "port": "61208" }
         ];
     }
     property int activeServerIndex: 0
@@ -198,19 +198,6 @@ PluginComponent {
         if (value >= 75) return Theme.error;
         if (value >= 50) return "#f59e0b";
         return Theme.primary;
-    }
-
-    function getOsIconName(osName) {
-        if (root.currentServerObj && root.currentServerObj.icon) {
-            return root.currentServerObj.icon;
-        }
-        if (!osName || typeof osName !== "string") return "dns";
-        var clean = osName.trim().toLowerCase();
-        if (clean.includes("fedora")) return "dns";
-        if (clean.includes("ubuntu")) return "computer";
-        if (clean.includes("debian")) return "terminal";
-        if (clean.includes("arch")) return "developer_board";
-        return "dns";
     }
 
     function fetchFastMetrics() {
@@ -535,7 +522,6 @@ PluginComponent {
                             sysInfo: root.sysInfo
                             currentServerObj: root.currentServerObj
                             isOffline: root.isOffline
-                            getOsIconNameFunc: root.getOsIconName
                         }
 
                         ResourcesCard {

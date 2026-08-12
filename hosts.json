@@ -2,13 +2,11 @@
   {
     "name": "Fedora Primary",
     "host": "192.168.100.200",
-    "port": "61208",
-    "icon": "dns"
+    "port": "61208"
   },
   {
     "name": "VirtualMachine",
     "host": "10.190.217.209",
-    "port": "61208",
-    "icon": "computer"
+    "port": "61208"
   }
 ]

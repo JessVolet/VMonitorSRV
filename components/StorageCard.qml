@@ -14,7 +14,7 @@ StyledRect {
     property var bytesToGbFunc: function(b) { return "0.0 GB"; }
     property bool emptySectionExpanded: false
 
-    readonly property bool hasSubvolumes: root.subvolumesList && root.subvolumesList.length > 0
+    readonly property bool hasSubvolumes: root.subvolumesList && Array.isArray(root.subvolumesList) && root.subvolumesList.length > 0
 
     signal subvolSelected(string name, var data)
 

@@ -11,6 +11,7 @@ StyledRect {
 
     signal serverSelected(int index)
     signal openHostsFile()
+    signal reloadHostsFile()
 
     Layout.fillWidth: true
     implicitHeight: Math.max(120, Math.min(220, root.serversList.length * 44 + 50))
@@ -24,15 +25,26 @@ StyledRect {
 
         RowLayout {
             Layout.fillWidth: true
+            spacing: Theme.spacingXS
+
             StyledText {
                 text: "Select Monitored Server"
                 font.pixelSize: Theme.fontSizeMedium
                 font.weight: Font.Bold
                 color: Theme.primary
             }
+
             Item { Layout.fillWidth: true }
+
             DankButton {
-                text: "Edit Hosts File"
+                iconName: "refresh"
+                backgroundColor: Theme.surfaceContainerHigh
+                textColor: Theme.surfaceText
+                onClicked: root.reloadHostsFile()
+            }
+
+            DankButton {
+                iconName: "edit"
                 backgroundColor: Theme.surfaceContainerHigh
                 textColor: Theme.surfaceText
                 onClicked: root.openHostsFile()

@@ -1,0 +1,12 @@
+[
+  {
+    "name": "Fedora Primary Server",
+    "host": "192.168.100.200",
+    "port": "61208"
+  },
+  {
+    "name": "Ubuntu Secondary Server",
+    "host": "192.168.100.201",
+    "port": "61208"
+  }
+]

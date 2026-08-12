@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
+import Quickshell.Io
 import qs.Common
 import qs.Services
 import qs.Widgets
@@ -21,28 +22,24 @@ PluginComponent {
     property int detailIntervalSecs: Math.max(1, pluginData.detailRefreshInterval || 2)
 
     property string hostsFilePath: {
-        var home = Quickshell.env("HOME") || "/home/vsynlo";
-        return home + "/.config/DankMaterialShell/plugins/vMonitorSRV/hosts.json";
+        var url = Qt.resolvedUrl("./hosts.json").toString();
+        if (url.startsWith("file://")) return url.substring(7);
+        return url;
     }
 
-    property var serversList: {
-        try {
-            var parsed = JSON.parse(pluginData.serversConfig || "[]");
-            if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-        } catch (e) {}
-        return [
-            { "name": "Fedora Primary", "host": "192.168.100.200", "port": "61208" },
-            { "name": "VirtualMachine", "host": "10.190.217.209", "port": "61208" }
-        ];
-    }
+    property var serversList: []
     property int activeServerIndex: 0
-    property var currentServerObj: serversList[Math.min(activeServerIndex, serversList.length - 1)] || serversList[0]
+    property var currentServerObj: (Array.isArray(serversList) && serversList.length > 0) ? (serversList[Math.min(activeServerIndex, serversList.length - 1)] || serversList[0]) : ({ "name": "No Server", "host": "127.0.0.1", "port": "61208" })
     property string baseUrl: {
         var s = currentServerObj;
-        var host = s.host || "192.168.100.200";
+        var host = s.host || "127.0.0.1";
         var port = s.port || "61208";
         return `http://${host}:${port}/api/widget`;
     }
+
+    property int currentReqSeq: 0
+    property int offlineConsecutiveFailures: 0
+    property double lastSuccessfulPingTime: Date.now()
 
     property bool isOffline: false
     property bool showAlertsDrawer: false
@@ -79,6 +76,54 @@ PluginComponent {
     property string selectedSubvolName: ""
     property var selectedSubvolData: ({})
     property string virtualNetQuery: ""
+
+    FileView {
+        id: hostsFileView
+        path: root.hostsFilePath
+        onFileChanged: root.loadServersFromHostsFile()
+    }
+
+    function parseHostsContent(content) {
+        if (content !== undefined && content !== null) {
+            var trimmed = content.trim();
+            if (trimmed.length > 0) {
+                var parsed = JSON.parse(trimmed);
+                if (Array.isArray(parsed)) {
+                    return parsed;
+                }
+            } else if (trimmed === "" || trimmed === "[]") {
+                return [];
+            }
+        }
+        return null;
+    }
+
+    function loadServersFromHostsFile() {
+        try {
+            var parsed = parseHostsContent(hostsFileView.text());
+            if (parsed !== null) {
+                root.serversList = parsed;
+                if (root.activeServerIndex >= parsed.length) {
+                    root.activeServerIndex = Math.max(0, parsed.length - 1);
+                }
+                return;
+            }
+        } catch (e) {}
+
+        root.serversList = [];
+        root.activeServerIndex = 0;
+    }
+
+    function reloadHostsNow() {
+        var p = root.hostsFilePath;
+        hostsFileView.path = "";
+        hostsFileView.path = p;
+        root.loadServersFromHostsFile();
+    }
+
+    Component.onCompleted: {
+        root.reloadHostsNow();
+    }
 
     Timer {
         id: fastMetricsTimer
@@ -297,6 +342,10 @@ PluginComponent {
     }
 
     function checkCrossServerAlerts() {
+        if (!Array.isArray(root.serversList) || root.serversList.length === 0) {
+            root.crossServerAlerts = [];
+            return;
+        }
         var alertsAcc = [];
         for (var i = 0; i < root.serversList.length; i++) {
             (function(srvIndex) {
@@ -327,12 +376,18 @@ PluginComponent {
     }
 
     function httpGet(url, callback) {
+        var reqSeq = root.currentReqSeq;
         var xhr = new XMLHttpRequest();
         xhr.open("GET", url, true);
-        xhr.timeout = 2500;
+        xhr.timeout = 3000;
         xhr.onreadystatechange = function() {
             if (xhr.readyState === XMLHttpRequest.DONE) {
+                if (reqSeq !== root.currentReqSeq) {
+                    return;
+                }
                 if (xhr.status >= 200 && xhr.status < 300) {
+                    root.offlineConsecutiveFailures = 0;
+                    root.lastSuccessfulPingTime = Date.now();
                     root.isOffline = false;
                     try {
                         callback(JSON.parse(xhr.responseText));
@@ -340,7 +395,11 @@ PluginComponent {
                         callback(null);
                     }
                 } else {
-                    root.isOffline = true;
+                    root.offlineConsecutiveFailures++;
+                    var elapsedMs = Date.now() - root.lastSuccessfulPingTime;
+                    if (elapsedMs > 10000 && root.offlineConsecutiveFailures >= 3) {
+                        root.isOffline = true;
+                    }
                     callback(null);
                 }
             }
@@ -469,6 +528,7 @@ PluginComponent {
                     showAlertsDrawer: root.showAlertsDrawer
                     crossServerAlertsCount: root.crossServerAlerts.length
                     onToggleServerDropdown: {
+                        root.reloadHostsNow();
                         root.showServerDropdown = !root.showServerDropdown;
                         if (root.showServerDropdown) root.showAlertsDrawer = false;
                     }
@@ -496,6 +556,10 @@ PluginComponent {
                     serversList: root.serversList
                     activeServerIndex: root.activeServerIndex
                     onServerSelected: (index) => {
+                        root.currentReqSeq++;
+                        root.offlineConsecutiveFailures = 0;
+                        root.lastSuccessfulPingTime = Date.now();
+                        root.isOffline = false;
                         root.activeServerIndex = index;
                         root.showServerDropdown = false;
                         root.cpuHistory = [0, 0, 0, 0, 0];
@@ -503,6 +567,9 @@ PluginComponent {
                         root.netRxHistory = [0, 0, 0, 0, 0];
                         root.netTxHistory = [0, 0, 0, 0, 0];
                         root.fetchAllData();
+                    }
+                    onReloadHostsFile: {
+                        root.reloadHostsNow();
                     }
                     onOpenHostsFile: root.openHostsFileInEditor()
                 }

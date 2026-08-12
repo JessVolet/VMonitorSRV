@@ -31,7 +31,8 @@ PluginComponent {
             if (Array.isArray(parsed) && parsed.length > 0) return parsed;
         } catch (e) {}
         return [
-            { "name": "Fedora Primary", "host": "192.168.100.200", "port": "61208" }
+            { "name": "Fedora Primary", "host": "192.168.100.200", "port": "61208", "icon": "dns" },
+            { "name": "VirtualMachine", "host": "10.190.217.209", "port": "61208", "icon": "computer" }
         ];
     }
     property int activeServerIndex: 0
@@ -200,19 +201,16 @@ PluginComponent {
     }
 
     function getOsIconName(osName) {
-        if (!osName || typeof osName !== "string") return "info";
-        var clean = osName.trim();
-        if (!clean) return "info";
-        var firstWord = clean.split(/[\s\/\_\-\.]+/)[0].toLowerCase();
-
-        if (firstWord === "fedora") return "fedora";
-        if (firstWord === "ubuntu") return "ubuntu";
-        if (firstWord === "debian") return "debian";
-        if (firstWord === "arch" || firstWord === "archlinux") return "archlinux";
-        if (firstWord === "alpine") return "alpine";
-        if (firstWord === "rhel" || firstWord === "centos" || firstWord === "redhat") return "redhat";
-        if (firstWord === "suse" || firstWord === "opensuse") return "opensuse";
-        return "info";
+        if (root.currentServerObj && root.currentServerObj.icon) {
+            return root.currentServerObj.icon;
+        }
+        if (!osName || typeof osName !== "string") return "dns";
+        var clean = osName.trim().toLowerCase();
+        if (clean.includes("fedora")) return "dns";
+        if (clean.includes("ubuntu")) return "computer";
+        if (clean.includes("debian")) return "terminal";
+        if (clean.includes("arch")) return "developer_board";
+        return "dns";
     }
 
     function fetchFastMetrics() {

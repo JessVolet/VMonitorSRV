@@ -61,7 +61,7 @@ StyledRect {
                     spacing: Theme.spacingS
 
                     DankIcon {
-                        name: isSelected ? "dns" : "server"
+                        name: modelData.icon || (isSelected ? "dns" : "computer")
                         color: isSelected ? Theme.onPrimary : Theme.primary
                     }
 

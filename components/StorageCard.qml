@@ -14,12 +14,7 @@ StyledRect {
     property var bytesToGbFunc: function(b) { return "0.0 GB"; }
     property bool emptySectionExpanded: false
 
-    readonly property int subvolLength: {
-        if (!root.subvolumesList) return 0;
-        if (typeof root.subvolumesList.length === "number") return root.subvolumesList.length;
-        return 0;
-    }
-    readonly property bool hasSubvolumes: root.subvolLength > 0
+    readonly property bool hasSubvolumes: root.subvolumesList && root.subvolumesList.length > 0
 
     signal subvolSelected(string name, var data)
 
@@ -71,7 +66,7 @@ StyledRect {
             spacing: Theme.spacingS
 
             StyledText {
-                text: `Btrfs Subvolumes Wheel (${root.subvolLength})`
+                text: `Btrfs Subvolumes Wheel (${root.subvolumesList ? root.subvolumesList.length : 0})`
                 font.pixelSize: Theme.fontSizeMedium
                 font.weight: Font.Bold
                 color: Theme.surfaceText

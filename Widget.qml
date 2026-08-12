@@ -76,7 +76,7 @@ PluginComponent {
     property var expandedContainerHistory: [0, 0, 0, 0, 0]
 
     property string selectedSubvolName: ""
-    property var selectedSubvolData: ({ "name": "root", "mount": "/", "percent": 0, "used_bytes": 0 })
+    property var selectedSubvolData: ({})
     property string virtualNetQuery: ""
 
     Timer {
@@ -240,17 +240,15 @@ PluginComponent {
             if (data && data.containers) root.containerList = data.containers;
         });
         httpGet(root.baseUrl + "/storage/subvolumes", function(data) {
-            if (data && Array.isArray(data.subvolumes) && data.subvolumes.length > 0) {
-                root.subvolumesList = data.subvolumes;
-                if (!root.selectedSubvolName) {
-                    var first = data.subvolumes[0];
-                    root.selectedSubvolName = typeof first === "object" ? (first.name || "") : first;
-                    root.selectedSubvolData = typeof first === "object" ? first : ({ "name": first, "mount": "/", "percent": 0, "used_bytes": 0 });
-                }
+            var subs = (data && Array.isArray(data.subvolumes)) ? data.subvolumes : [];
+            root.subvolumesList = subs;
+            if (subs.length > 0) {
+                var first = subs[0];
+                root.selectedSubvolName = typeof first === "object" ? (first.name || "") : first;
+                root.selectedSubvolData = typeof first === "object" ? first : ({ "name": first, "mount": "/", "percent": 0, "used_bytes": 0 });
             } else {
-                root.subvolumesList = [];
                 root.selectedSubvolName = "";
-                root.selectedSubvolData = ({ "name": "root", "mount": "/", "percent": 0, "used_bytes": 0 });
+                root.selectedSubvolData = ({});
             }
         });
         httpGet(root.baseUrl + "/network", function(data) {

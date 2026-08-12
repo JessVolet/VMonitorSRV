@@ -309,9 +309,9 @@ PluginComponent {
     }
 
     function getMetricColor(value) {
-        if (value < 60) return "#a6e3a1";
+        if (value < 60) return Theme.primary;
         if (value < 85) return "#f59e0b";
-        return Theme.error || "#f38ba8";
+        return Theme.error;
     }
 
     function bytesToGb(bytes) {
@@ -383,23 +383,21 @@ PluginComponent {
     popoutContent: Component {
         PopoutComponent {
             id: popout
-            headerText: root.sysInfo.hostname || root.currentServerObj.name || "VMonitorSRV"
+            headerText: "VMonitorSRV"
             detailsText: root.isOffline ? "Status: OFFLINE" : `IP: ${root.currentServerObj.host} • Up: ${root.sysInfo.uptime || "N/A"}`
             showCloseButton: true
 
             ColumnLayout {
                 width: parent.width
-                spacing: Theme.spacingS
+                spacing: Theme.spacingM
 
                 RowLayout {
                     Layout.fillWidth: true
                     spacing: Theme.spacingS
 
-                    DankIcon { name: "dns"; color: Theme.primary }
-
                     DankButton {
                         text: `${root.currentServerObj.name || root.currentServerObj.host} ▼`
-                        backgroundColor: root.showServerDropdown ? Theme.primary : Theme.surfaceContainer
+                        backgroundColor: root.showServerDropdown ? Theme.primary : Theme.surfaceContainerHighest
                         textColor: root.showServerDropdown ? Theme.onPrimary : Theme.surfaceText
                         onClicked: {
                             root.showServerDropdown = !root.showServerDropdown;
@@ -412,8 +410,8 @@ PluginComponent {
                     DankButton {
                         iconName: "warning"
                         text: `Alerts: ${root.crossServerAlerts.length}`
-                        backgroundColor: root.showAlertsDrawer ? "#f59e0b" : Theme.surfaceContainer
-                        textColor: root.showAlertsDrawer ? "#111" : Theme.surfaceText
+                        backgroundColor: root.showAlertsDrawer ? "#f59e0b" : Theme.surfaceContainerHighest
+                        textColor: root.showAlertsDrawer ? Theme.surfaceContainer : Theme.surfaceText
                         onClicked: {
                             root.showAlertsDrawer = !root.showAlertsDrawer;
                             if (root.showAlertsDrawer) root.showServerDropdown = false;
@@ -422,11 +420,15 @@ PluginComponent {
 
                     DankButton {
                         iconName: "refresh"
+                        backgroundColor: Theme.surfaceContainerHighest
+                        textColor: Theme.surfaceText
                         onClicked: root.fetchAllData()
                     }
 
                     DankButton {
                         iconName: "settings"
+                        backgroundColor: Theme.surfaceContainerHighest
+                        textColor: Theme.surfaceText
                         onClicked: {
                             if (typeof PopoutService !== "undefined" && PopoutService) {
                                 PopoutService.showPluginSettings("vMonitorSRV");
@@ -448,8 +450,8 @@ PluginComponent {
                         spacing: Theme.spacingS
 
                         StyledText {
-                            text: "Select Server Connection:"
-                            font.pixelSize: Theme.fontSizeSmall
+                            text: "Select Monitored Server"
+                            font.pixelSize: Theme.fontSizeMedium
                             font.weight: Font.Bold
                             color: Theme.primary
                         }
@@ -462,7 +464,7 @@ PluginComponent {
                             spacing: Theme.spacingXS
                             delegate: StyledRect {
                                 width: ListView.view.width
-                                height: 32
+                                height: 34
                                 radius: Theme.cornerRadiusSmall
                                 color: index === root.activeServerIndex ? Theme.primary : Theme.surfaceContainerHigh
 
@@ -501,7 +503,7 @@ PluginComponent {
                     Layout.fillWidth: true
                     implicitHeight: 120
                     radius: Theme.cornerRadius
-                    color: "#2d1f1f"
+                    color: Theme.surfaceContainerHighest
 
                     ColumnLayout {
                         anchors.fill: parent
@@ -509,10 +511,10 @@ PluginComponent {
                         spacing: Theme.spacingS
 
                         StyledText {
-                            text: "Active Alerts across Connected Servers:"
-                            font.pixelSize: Theme.fontSizeSmall
+                            text: "Active Alerts across Connected Servers"
+                            font.pixelSize: Theme.fontSizeMedium
                             font.weight: Font.Bold
-                            color: "#f59e0b"
+                            color: Theme.primary
                         }
 
                         ListView {
@@ -544,196 +546,239 @@ PluginComponent {
 
                 Flickable {
                     Layout.fillWidth: true
-                    implicitHeight: 490
-                    height: 490
+                    implicitHeight: 480
+                    height: 480
                     contentHeight: mainContent.implicitHeight
                     clip: true
 
                     ColumnLayout {
                         id: mainContent
                         width: parent.width
-                        spacing: Theme.spacingM
+                        spacing: Theme.spacingL
 
-                        StyledRect {
+                        ColumnLayout {
                             Layout.fillWidth: true
-                            implicitHeight: 155
-                            radius: Theme.cornerRadius
-                            color: Theme.surfaceContainerHigh
+                            spacing: Theme.spacingS
 
-                            ColumnLayout {
-                                anchors.fill: parent
-                                anchors.margins: Theme.spacingM
-                                spacing: Theme.spacingS
+                            StyledText {
+                                text: "Information"
+                                font.pixelSize: Theme.fontSizeLarge
+                                font.weight: Font.Bold
+                                color: Theme.surfaceText
+                            }
 
-                                RowLayout {
-                                    Layout.fillWidth: true
-                                    StyledText {
-                                        text: root.sysInfo.hostname || root.currentServerObj.name || "server"
-                                        font.pixelSize: Theme.fontSizeMedium
-                                        font.weight: Font.Bold
-                                        color: Theme.primary
+                            StyledRect {
+                                Layout.fillWidth: true
+                                implicitHeight: 160
+                                radius: Theme.cornerRadius
+                                color: Theme.surfaceContainerHigh
+
+                                ColumnLayout {
+                                    anchors.fill: parent
+                                    anchors.margins: Theme.spacingM
+                                    spacing: Theme.spacingS
+
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        StyledText {
+                                            text: root.sysInfo.hostname || root.currentServerObj.name || "server"
+                                            font.pixelSize: Theme.fontSizeMedium
+                                            font.weight: Font.Bold
+                                            color: Theme.primary
+                                        }
+                                        Item { Layout.fillWidth: true }
+                                        StyledText {
+                                            text: root.isOffline ? "OFFLINE" : "ONLINE"
+                                            font.pixelSize: Theme.fontSizeSmall
+                                            font.weight: Font.Bold
+                                            color: root.isOffline ? Theme.error : Theme.primary
+                                        }
                                     }
-                                    Item { Layout.fillWidth: true }
-                                    StyledText {
-                                        text: root.isOffline ? "OFFLINE" : "ONLINE"
-                                        font.pixelSize: Theme.fontSizeSmall
-                                        font.weight: Font.Bold
-                                        color: root.isOffline ? Theme.error : "#a6e3a1"
+
+                                    GridLayout {
+                                        columns: 2
+                                        rowSpacing: 4
+                                        columnSpacing: Theme.spacingM
+                                        Layout.fillWidth: true
+
+                                        StyledText { text: "CPU Model:"; font.pixelSize: Theme.fontSizeSmall; font.weight: Font.Bold; color: Theme.surfaceVariantText }
+                                        StyledText { text: root.sysInfo.cpu_name || "Intel(R) Core(TM) i5-8500 CPU @ 3.00GHz"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; elide: Text.ElideRight; Layout.fillWidth: true }
+
+                                        StyledText { text: "Hardware Model:"; font.pixelSize: Theme.fontSizeSmall; font.weight: Font.Bold; color: Theme.surfaceVariantText }
+                                        StyledText { text: root.sysInfo.hardware_model || "10SJS0FJ00"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; elide: Text.ElideRight; Layout.fillWidth: true }
+
+                                        StyledText { text: "OS Name:"; font.pixelSize: Theme.fontSizeSmall; font.weight: Font.Bold; color: Theme.surfaceVariantText }
+                                        StyledText { text: root.sysInfo.os_name || "Fedora Linux 44 64bit"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; elide: Text.ElideRight; Layout.fillWidth: true }
+
+                                        StyledText { text: "Uptime:"; font.pixelSize: Theme.fontSizeSmall; font.weight: Font.Bold; color: Theme.surfaceVariantText }
+                                        StyledText { text: root.sysInfo.uptime || "17 days, 17:36:20"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; elide: Text.ElideRight; Layout.fillWidth: true }
                                     }
-                                }
-
-                                GridLayout {
-                                    columns: 2
-                                    rowSpacing: 4
-                                    columnSpacing: Theme.spacingM
-                                    Layout.fillWidth: true
-
-                                    StyledText { text: "CPU Model:"; font.pixelSize: Theme.fontSizeSmall; font.weight: Font.Bold; color: Theme.surfaceVariantText }
-                                    StyledText { text: root.sysInfo.cpu_name || "Intel(R) Core(TM) i5-8500 CPU @ 3.00GHz"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; elide: Text.ElideRight; Layout.fillWidth: true }
-
-                                    StyledText { text: "Hardware Model:"; font.pixelSize: Theme.fontSizeSmall; font.weight: Font.Bold; color: Theme.surfaceVariantText }
-                                    StyledText { text: root.sysInfo.hardware_model || "10SJS0FJ00"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; elide: Text.ElideRight; Layout.fillWidth: true }
-
-                                    StyledText { text: "OS Name:"; font.pixelSize: Theme.fontSizeSmall; font.weight: Font.Bold; color: Theme.surfaceVariantText }
-                                    StyledText { text: root.sysInfo.os_name || "Fedora Linux 44 64bit"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; elide: Text.ElideRight; Layout.fillWidth: true }
-
-                                    StyledText { text: "Uptime:"; font.pixelSize: Theme.fontSizeSmall; font.weight: Font.Bold; color: Theme.surfaceVariantText }
-                                    StyledText { text: root.sysInfo.uptime || "17 days, 17:36:20"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; elide: Text.ElideRight; Layout.fillWidth: true }
                                 }
                             }
                         }
 
-                        StyledRect {
+                        Rectangle {
                             Layout.fillWidth: true
-                            implicitHeight: root.enableGraphs ? 190 : 135
-                            radius: Theme.cornerRadius
-                            color: Theme.surfaceContainerHigh
-
-                            ColumnLayout {
-                                anchors.fill: parent
-                                anchors.margins: Theme.spacingM
-                                spacing: Theme.spacingS
-
-                                RowLayout {
-                                    Layout.fillWidth: true
-                                    StyledText { text: "CPU Usage"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; font.weight: Font.Bold }
-                                    Item { Layout.fillWidth: true }
-                                    StyledText {
-                                        text: `${root.sysResources.cpu.usage_percent.toFixed(1)}% (${root.sysResources.cpu.temp_c || 0}°C)`
-                                        font.pixelSize: Theme.fontSizeSmall
-                                        color: root.getMetricColor(root.sysResources.cpu.usage_percent)
-                                        font.weight: Font.Bold
-                                    }
-                                }
-
-                                StyledRect {
-                                    Layout.fillWidth: true
-                                    height: 6
-                                    radius: 3
-                                    color: Theme.surfaceContainerHighest
-                                    StyledRect {
-                                        width: parent.width * Math.min(1.0, root.sysResources.cpu.usage_percent / 100.0)
-                                        height: parent.height
-                                        radius: parent.radius
-                                        color: root.getMetricColor(root.sysResources.cpu.usage_percent)
-                                    }
-                                }
-
-                                RowLayout {
-                                    Layout.fillWidth: true
-                                    StyledText { text: "RAM Usage"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; font.weight: Font.Bold }
-                                    Item { Layout.fillWidth: true }
-                                    StyledText {
-                                        text: `${root.sysResources.memory.usage_percent.toFixed(1)}%`
-                                        font.pixelSize: Theme.fontSizeSmall
-                                        color: root.getMetricColor(root.sysResources.memory.usage_percent)
-                                        font.weight: Font.Bold
-                                    }
-                                }
-
-                                StyledRect {
-                                    Layout.fillWidth: true
-                                    height: 6
-                                    radius: 3
-                                    color: Theme.surfaceContainerHighest
-                                    StyledRect {
-                                        width: parent.width * Math.min(1.0, root.sysResources.memory.usage_percent / 100.0)
-                                        height: parent.height
-                                        radius: parent.radius
-                                        color: root.getMetricColor(root.sysResources.memory.usage_percent)
-                                    }
-                                }
-
-                                RowLayout {
-                                    Layout.fillWidth: true
-                                    StyledText { text: "Disk Root (/)"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; font.weight: Font.Bold }
-                                    Item { Layout.fillWidth: true }
-                                    StyledText {
-                                        text: `${root.sysResources.disk_root.usage_percent.toFixed(1)}%`
-                                        font.pixelSize: Theme.fontSizeSmall
-                                        color: root.getMetricColor(root.sysResources.disk_root.usage_percent)
-                                        font.weight: Font.Bold
-                                    }
-                                }
-
-                                StyledRect {
-                                    Layout.fillWidth: true
-                                    height: 6
-                                    radius: 3
-                                    color: Theme.surfaceContainerHighest
-                                    StyledRect {
-                                        width: parent.width * Math.min(1.0, root.sysResources.disk_root.usage_percent / 100.0)
-                                        height: parent.height
-                                        radius: parent.radius
-                                        color: root.getMetricColor(root.sysResources.disk_root.usage_percent)
-                                    }
-                                }
-
-                                Canvas {
-                                    visible: root.enableGraphs
-                                    Layout.fillWidth: true
-                                    implicitHeight: 35
-                                    onPaint: {
-                                        var ctx = getContext("2d");
-                                        ctx.clearRect(0, 0, width, height);
-
-                                        ctx.beginPath();
-                                        ctx.lineWidth = 1;
-                                        ctx.strokeStyle = Theme.surfaceContainerHighest || "#444";
-                                        ctx.moveTo(0, height - 2);
-                                        ctx.lineTo(width, height - 2);
-                                        ctx.stroke();
-
-                                        if (!root.cpuHistory || root.cpuHistory.length < 2) return;
-
-                                        ctx.beginPath();
-                                        ctx.lineWidth = 2;
-                                        ctx.strokeStyle = root.getMetricColor(root.sysResources.cpu.usage_percent);
-
-                                        var step = width / (root.cpuHistory.length - 1);
-                                        for (var i = 0; i < root.cpuHistory.length; i++) {
-                                            var val = root.cpuHistory[i] || 0;
-                                            var y = height - (val / 100.0 * (height - 4)) - 2;
-                                            var x = i * step;
-                                            if (i === 0) ctx.moveTo(x, y);
-                                            else ctx.lineTo(x, y);
-                                        }
-                                        ctx.stroke();
-                                    }
-
-                                    Connections {
-                                        target: root
-                                        function onCpuHistoryChanged() {
-                                            if (root.enableGraphs) parent.requestPaint();
-                                        }
-                                    }
-                                }
-                            }
+                            height: 1
+                            color: Theme.surfaceContainerHighest
                         }
 
                         ColumnLayout {
                             Layout.fillWidth: true
                             spacing: Theme.spacingS
+
+                            StyledText {
+                                text: "Resources"
+                                font.pixelSize: Theme.fontSizeLarge
+                                font.weight: Font.Bold
+                                color: Theme.surfaceText
+                            }
+
+                            StyledRect {
+                                Layout.fillWidth: true
+                                implicitHeight: root.enableGraphs ? 190 : 135
+                                radius: Theme.cornerRadius
+                                color: Theme.surfaceContainerHigh
+
+                                ColumnLayout {
+                                    anchors.fill: parent
+                                    anchors.margins: Theme.spacingM
+                                    spacing: Theme.spacingS
+
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        StyledText { text: "CPU Usage"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; font.weight: Font.Bold }
+                                        Item { Layout.fillWidth: true }
+                                        StyledText {
+                                            text: `${root.sysResources.cpu.usage_percent.toFixed(1)}% (${root.sysResources.cpu.temp_c || 0}°C)`
+                                            font.pixelSize: Theme.fontSizeSmall
+                                            color: root.getMetricColor(root.sysResources.cpu.usage_percent)
+                                            font.weight: Font.Bold
+                                        }
+                                    }
+
+                                    StyledRect {
+                                        Layout.fillWidth: true
+                                        height: 6
+                                        radius: 3
+                                        color: Theme.surfaceContainerHighest
+                                        StyledRect {
+                                            width: parent.width * Math.min(1.0, root.sysResources.cpu.usage_percent / 100.0)
+                                            height: parent.height
+                                            radius: parent.radius
+                                            color: root.getMetricColor(root.sysResources.cpu.usage_percent)
+                                        }
+                                    }
+
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        StyledText { text: "RAM Usage"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; font.weight: Font.Bold }
+                                        Item { Layout.fillWidth: true }
+                                        StyledText {
+                                            text: `${root.sysResources.memory.usage_percent.toFixed(1)}%`
+                                            font.pixelSize: Theme.fontSizeSmall
+                                            color: root.getMetricColor(root.sysResources.memory.usage_percent)
+                                            font.weight: Font.Bold
+                                        }
+                                    }
+
+                                    StyledRect {
+                                        Layout.fillWidth: true
+                                        height: 6
+                                        radius: 3
+                                        color: Theme.surfaceContainerHighest
+                                        StyledRect {
+                                            width: parent.width * Math.min(1.0, root.sysResources.memory.usage_percent / 100.0)
+                                            height: parent.height
+                                            radius: parent.radius
+                                            color: root.getMetricColor(root.sysResources.memory.usage_percent)
+                                        }
+                                    }
+
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        StyledText { text: "Disk Root (/)"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; font.weight: Font.Bold }
+                                        Item { Layout.fillWidth: true }
+                                        StyledText {
+                                            text: `${root.sysResources.disk_root.usage_percent.toFixed(1)}%`
+                                            font.pixelSize: Theme.fontSizeSmall
+                                            color: root.getMetricColor(root.sysResources.disk_root.usage_percent)
+                                            font.weight: Font.Bold
+                                        }
+                                    }
+
+                                    StyledRect {
+                                        Layout.fillWidth: true
+                                        height: 6
+                                        radius: 3
+                                        color: Theme.surfaceContainerHighest
+                                        StyledRect {
+                                            width: parent.width * Math.min(1.0, root.sysResources.disk_root.usage_percent / 100.0)
+                                            height: parent.height
+                                            radius: parent.radius
+                                            color: root.getMetricColor(root.sysResources.disk_root.usage_percent)
+                                        }
+                                    }
+
+                                    Canvas {
+                                        visible: root.enableGraphs
+                                        Layout.fillWidth: true
+                                        implicitHeight: 35
+                                        onPaint: {
+                                            var ctx = getContext("2d");
+                                            ctx.clearRect(0, 0, width, height);
+
+                                            ctx.beginPath();
+                                            ctx.lineWidth = 1;
+                                            ctx.strokeStyle = Theme.surfaceContainerHighest;
+                                            ctx.moveTo(0, height - 2);
+                                            ctx.lineTo(width, height - 2);
+                                            ctx.stroke();
+
+                                            if (!root.cpuHistory || root.cpuHistory.length < 2) return;
+
+                                            ctx.beginPath();
+                                            ctx.lineWidth = 2;
+                                            ctx.strokeStyle = root.getMetricColor(root.sysResources.cpu.usage_percent);
+
+                                            var step = width / (root.cpuHistory.length - 1);
+                                            for (var i = 0; i < root.cpuHistory.length; i++) {
+                                                var val = root.cpuHistory[i] || 0;
+                                                var y = height - (val / 100.0 * (height - 4)) - 2;
+                                                var x = i * step;
+                                                if (i === 0) ctx.moveTo(x, y);
+                                                else ctx.lineTo(x, y);
+                                            }
+                                            ctx.stroke();
+                                        }
+
+                                        Connections {
+                                            target: root
+                                            function onCpuHistoryChanged() {
+                                                if (root.enableGraphs) parent.requestPaint();
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        Rectangle {
+                            Layout.fillWidth: true
+                            height: 1
+                            color: Theme.surfaceContainerHighest
+                        }
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: Theme.spacingS
+
+                            StyledText {
+                                text: "Storage"
+                                font.pixelSize: Theme.fontSizeLarge
+                                font.weight: Font.Bold
+                                color: Theme.surfaceText
+                            }
 
                             StyledRect {
                                 Layout.fillWidth: true
@@ -825,6 +870,8 @@ PluginComponent {
 
                                             DankButton {
                                                 iconName: isExpanded ? "expand_less" : "expand_more"
+                                                backgroundColor: Theme.surfaceContainerHighest
+                                                textColor: Theme.surfaceText
                                                 onClicked: {
                                                     if (isExpanded) root.expandedSubvolName = "";
                                                     else root.expandedSubvolName = subName;
@@ -862,13 +909,19 @@ PluginComponent {
                             }
                         }
 
+                        Rectangle {
+                            Layout.fillWidth: true
+                            height: 1
+                            color: Theme.surfaceContainerHighest
+                        }
+
                         ColumnLayout {
                             Layout.fillWidth: true
                             spacing: Theme.spacingS
 
                             StyledText {
-                                text: `Network Monitor (${root.selectedNetId})`
-                                font.pixelSize: Theme.fontSizeMedium
+                                text: "Network"
+                                font.pixelSize: Theme.fontSizeLarge
                                 font.weight: Font.Bold
                                 color: Theme.surfaceText
                             }
@@ -915,7 +968,7 @@ PluginComponent {
 
                                             ctx.beginPath();
                                             ctx.lineWidth = 1;
-                                            ctx.strokeStyle = Theme.surfaceContainerHighest || "#444";
+                                            ctx.strokeStyle = Theme.surfaceContainerHighest;
                                             ctx.moveTo(0, height - 2);
                                             ctx.lineTo(width, height - 2);
                                             ctx.stroke();
@@ -929,7 +982,7 @@ PluginComponent {
 
                                             ctx.beginPath();
                                             ctx.lineWidth = 2;
-                                            ctx.strokeStyle = "#89b4fa";
+                                            ctx.strokeStyle = Theme.primary;
 
                                             var step = width / (root.netRxHistory.length - 1);
                                             for (var j = 0; j < root.netRxHistory.length; j++) {
@@ -961,7 +1014,7 @@ PluginComponent {
 
                             DankTextField {
                                 Layout.fillWidth: true
-                                placeholderText: "Filter interfaces..."
+                                placeholderText: "Filter physical & virtual interfaces..."
                                 text: root.virtualNetQuery
                                 onTextChanged: root.virtualNetQuery = text
                             }
@@ -989,7 +1042,7 @@ PluginComponent {
 
                                         DankIcon {
                                             name: isSelected ? "check_circle" : (isVirt ? "hub" : "lan")
-                                            color: isSelected ? "#a6e3a1" : Theme.primary
+                                            color: isSelected ? Theme.primary : Theme.surfaceVariantText
                                         }
 
                                         StyledText {
@@ -1002,6 +1055,8 @@ PluginComponent {
 
                                         DankButton {
                                             text: isSelected ? "Active" : "Select"
+                                            backgroundColor: isSelected ? Theme.primary : Theme.surfaceContainerHighest
+                                            textColor: isSelected ? Theme.onPrimary : Theme.surfaceText
                                             onClicked: {
                                                 root.selectedNetId = itemIfName;
                                                 root.netRxHistory = [0, 0, 0, 0, 0];
@@ -1014,9 +1069,22 @@ PluginComponent {
                             }
                         }
 
+                        Rectangle {
+                            Layout.fillWidth: true
+                            height: 1
+                            color: Theme.surfaceContainerHighest
+                        }
+
                         ColumnLayout {
                             Layout.fillWidth: true
                             spacing: Theme.spacingS
+
+                            StyledText {
+                                text: "GPU Mode"
+                                font.pixelSize: Theme.fontSizeLarge
+                                font.weight: Font.Bold
+                                color: Theme.surfaceText
+                            }
 
                             StyledText {
                                 text: `Podman Containers (${root.containerList.length})`
@@ -1052,7 +1120,7 @@ PluginComponent {
 
                                             DankIcon {
                                                 name: modelData.status === "running" ? "play_circle" : "error"
-                                                color: modelData.status === "running" ? "#a6e3a1" : Theme.error
+                                                color: modelData.status === "running" ? Theme.primary : Theme.error
                                             }
 
                                             ColumnLayout {
@@ -1077,6 +1145,8 @@ PluginComponent {
 
                                             DankButton {
                                                 iconName: isExpanded ? "expand_less" : "expand_more"
+                                                backgroundColor: Theme.surfaceContainerHighest
+                                                textColor: Theme.surfaceText
                                                 onClicked: {
                                                     if (isExpanded) {
                                                         root.expandedContainerId = "";
@@ -1091,16 +1161,22 @@ PluginComponent {
 
                                             DankButton {
                                                 iconName: "content_copy"
+                                                backgroundColor: Theme.surfaceContainerHighest
+                                                textColor: Theme.surfaceText
                                                 onClicked: root.copyContainerId(cId)
                                             }
 
                                             DankButton {
                                                 iconName: "restart_alt"
+                                                backgroundColor: Theme.surfaceContainerHighest
+                                                textColor: Theme.surfaceText
                                                 onClicked: root.restartContainer(cId)
                                             }
 
                                             DankButton {
                                                 iconName: "stop"
+                                                backgroundColor: Theme.surfaceContainerHighest
+                                                textColor: Theme.surfaceText
                                                 onClicked: root.stopContainer(cId)
                                             }
                                         }
@@ -1150,7 +1226,7 @@ PluginComponent {
 
                                                     ctx.beginPath();
                                                     ctx.lineWidth = 1;
-                                                    ctx.strokeStyle = Theme.surfaceContainerHighest || "#444";
+                                                    ctx.strokeStyle = Theme.surfaceContainerHighest;
                                                     ctx.moveTo(0, height - 2);
                                                     ctx.lineTo(width, height - 2);
                                                     ctx.stroke();

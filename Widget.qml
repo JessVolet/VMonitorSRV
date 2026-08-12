@@ -421,13 +421,10 @@ PluginComponent {
             spacing: Theme.spacingS
             anchors.verticalCenter: parent.verticalCenter
 
-            Image {
-                source: "./VMonitorSRV.svg"
-                sourceSize.width: root.iconSize || 18
-                sourceSize.height: root.iconSize || 18
-                width: root.iconSize || 18
-                height: root.iconSize || 18
-                fillMode: Image.PreserveAspectFit
+            DankIcon {
+                name: "dns"
+                size: root.iconSize
+                color: root.isOffline ? Theme.error : "#22c55e"
                 anchors.verticalCenter: parent.verticalCenter
             }
 
@@ -445,13 +442,10 @@ PluginComponent {
             spacing: Theme.spacingXS
             anchors.centerIn: parent
 
-            Image {
-                source: "./VMonitorSRV.svg"
-                sourceSize.width: root.iconSize || 18
-                sourceSize.height: root.iconSize || 18
-                width: root.iconSize || 18
-                height: root.iconSize || 18
-                fillMode: Image.PreserveAspectFit
+            DankIcon {
+                name: "dns"
+                size: root.iconSize
+                color: root.isOffline ? Theme.error : "#22c55e"
                 anchors.horizontalCenter: parent.horizontalCenter
             }
 

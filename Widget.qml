@@ -548,7 +548,7 @@ PluginComponent {
                 StyledRect {
                     visible: root.showServerDropdown
                     Layout.fillWidth: true
-                    implicitHeight: root.showHostEditor ? 190 : 160
+                    implicitHeight: root.showHostEditor ? 200 : Math.max(120, Math.min(220, root.serversList.length * 44 + 50))
                     radius: Theme.cornerRadius
                     color: Theme.surfaceContainerHighest
 
@@ -632,9 +632,11 @@ PluginComponent {
                             spacing: Theme.spacingXS
                             delegate: StyledRect {
                                 width: ListView.view.width
-                                height: 38
+                                height: 40
                                 radius: Theme.cornerRadiusSmall
-                                color: index === root.activeServerIndex ? Theme.primary : Theme.surfaceContainerHigh
+                                color: isSelected ? Theme.primary : Theme.surfaceContainerHigh
+
+                                property bool isSelected: index === root.activeServerIndex
 
                                 RowLayout {
                                     anchors.fill: parent
@@ -642,32 +644,56 @@ PluginComponent {
                                     spacing: Theme.spacingS
 
                                     DankIcon {
-                                        name: index === root.activeServerIndex ? "dns" : "server"
-                                        color: index === root.activeServerIndex ? Theme.onPrimary : Theme.surfaceVariantText
+                                        name: isSelected ? "dns" : "server"
+                                        color: isSelected ? Theme.onPrimary : Theme.primary
                                     }
 
                                     StyledText {
                                         text: `${modelData.name || modelData.host} (${modelData.host}:${modelData.port || "61208"})`
                                         font.pixelSize: Theme.fontSizeSmall
-                                        font.weight: index === root.activeServerIndex ? Font.Bold : Font.Normal
-                                        color: index === root.activeServerIndex ? Theme.onPrimary : Theme.surfaceText
+                                        font.weight: isSelected ? Font.Bold : Font.Normal
+                                        color: isSelected ? Theme.onPrimary : Theme.surfaceText
                                         Layout.fillWidth: true
                                         elide: Text.ElideRight
                                     }
 
-                                    DankButton {
-                                        iconName: "edit"
-                                        backgroundColor: Theme.surfaceContainerHighest
-                                        textColor: Theme.surfaceText
-                                        onClicked: root.openEditHost(index)
+                                    StyledRect {
+                                        width: 28
+                                        height: 28
+                                        radius: Theme.cornerRadiusSmall
+                                        color: isSelected ? Qt.rgba(1, 1, 1, 0.2) : Theme.surfaceContainerHighest
+
+                                        DankIcon {
+                                            anchors.centerIn: parent
+                                            name: "edit"
+                                            size: 16
+                                            color: isSelected ? Theme.onPrimary : Theme.surfaceText
+                                        }
+
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            onClicked: root.openEditHost(index)
+                                        }
                                     }
 
-                                    DankButton {
+                                    StyledRect {
                                         visible: root.serversList.length > 1
-                                        iconName: "delete"
-                                        backgroundColor: Theme.surfaceContainerHighest
-                                        textColor: Theme.error
-                                        onClicked: root.deleteHost(index)
+                                        width: 28
+                                        height: 28
+                                        radius: Theme.cornerRadiusSmall
+                                        color: isSelected ? Qt.rgba(1, 1, 1, 0.2) : Theme.surfaceContainerHighest
+
+                                        DankIcon {
+                                            anchors.centerIn: parent
+                                            name: "delete"
+                                            size: 16
+                                            color: isSelected ? Theme.onPrimary : Theme.error
+                                        }
+
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            onClicked: root.deleteHost(index)
+                                        }
                                     }
                                 }
 

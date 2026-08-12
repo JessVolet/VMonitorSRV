@@ -76,7 +76,7 @@ PluginComponent {
     property var expandedContainerHistory: [0, 0, 0, 0, 0]
 
     property string selectedSubvolName: ""
-    property var selectedSubvolData: root.subvolumesList.length > 0 ? root.subvolumesList[0] : ({ "name": "root", "mount": "/", "percent": 0, "used_bytes": 0 })
+    property var selectedSubvolData: ({ "name": "root", "mount": "/", "percent": 0, "used_bytes": 0 })
     property string virtualNetQuery: ""
 
     Timer {
@@ -200,15 +200,19 @@ PluginComponent {
     }
 
     function getOsIconName(osName) {
-        if (!osName || typeof osName !== "string") return "dns";
-        var lower = osName.toLowerCase();
-        if (lower.includes("fedora")) return "fedora";
-        if (lower.includes("ubuntu")) return "ubuntu";
-        if (lower.includes("debian")) return "debian";
-        if (lower.includes("arch")) return "archlinux";
-        if (lower.includes("alpine")) return "alpine";
-        if (lower.includes("centos") || lower.includes("rhel") || lower.includes("red hat")) return "redhat";
-        return "dns";
+        if (!osName || typeof osName !== "string") return "info";
+        var clean = osName.trim();
+        if (!clean) return "info";
+        var firstWord = clean.split(/[\s\/\_\-\.]+/)[0].toLowerCase();
+
+        if (firstWord === "fedora") return "fedora";
+        if (firstWord === "ubuntu") return "ubuntu";
+        if (firstWord === "debian") return "debian";
+        if (firstWord === "arch" || firstWord === "archlinux") return "archlinux";
+        if (firstWord === "alpine") return "alpine";
+        if (firstWord === "rhel" || firstWord === "centos" || firstWord === "redhat") return "redhat";
+        if (firstWord === "suse" || firstWord === "opensuse") return "opensuse";
+        return "info";
     }
 
     function fetchFastMetrics() {
@@ -236,12 +240,17 @@ PluginComponent {
             if (data && data.containers) root.containerList = data.containers;
         });
         httpGet(root.baseUrl + "/storage/subvolumes", function(data) {
-            if (data && data.subvolumes) {
+            if (data && Array.isArray(data.subvolumes) && data.subvolumes.length > 0) {
                 root.subvolumesList = data.subvolumes;
-                if (data.subvolumes.length > 0 && !root.selectedSubvolName) {
-                    root.selectedSubvolName = data.subvolumes[0].name || "";
-                    root.selectedSubvolData = data.subvolumes[0];
+                if (!root.selectedSubvolName) {
+                    var first = data.subvolumes[0];
+                    root.selectedSubvolName = typeof first === "object" ? (first.name || "") : first;
+                    root.selectedSubvolData = typeof first === "object" ? first : ({ "name": first, "mount": "/", "percent": 0, "used_bytes": 0 });
                 }
+            } else {
+                root.subvolumesList = [];
+                root.selectedSubvolName = "";
+                root.selectedSubvolData = ({ "name": "root", "mount": "/", "percent": 0, "used_bytes": 0 });
             }
         });
         httpGet(root.baseUrl + "/network", function(data) {

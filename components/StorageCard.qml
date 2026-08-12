@@ -14,8 +14,15 @@ StyledRect {
     property var bytesToGbFunc: function(b) { return "0.0 GB"; }
     property bool emptySectionExpanded: false
 
-    readonly property int subvolCount: Array.isArray(root.subvolumesList) ? root.subvolumesList.length : 0
-    readonly property bool hasSubvolumes: subvolCount > 0
+    readonly property bool hasSubvolumes: {
+        if (!Array.isArray(root.subvolumesList) || root.subvolumesList.length === 0) return false;
+        var first = root.subvolumesList[0];
+        if (!first) return false;
+        if (typeof first === "string" && first.length > 0) return true;
+        if (typeof first === "object" && (first.name || first.mount)) return true;
+        return false;
+    }
+    readonly property int displaySubvolCount: root.hasSubvolumes ? root.subvolumesList.length : 0
 
     signal subvolSelected(string name, var data)
 
@@ -67,7 +74,7 @@ StyledRect {
             spacing: Theme.spacingS
 
             StyledText {
-                text: `Btrfs Subvolumes Wheel (${root.subvolCount})`
+                text: `Btrfs Subvolumes Wheel (${root.displaySubvolCount})`
                 font.pixelSize: Theme.fontSizeMedium
                 font.weight: Font.Bold
                 color: Theme.surfaceText

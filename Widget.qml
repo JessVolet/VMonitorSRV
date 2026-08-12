@@ -14,6 +14,7 @@ PluginComponent {
     popoutHeight: 640
 
     property bool enableGraphs: pluginData.enableGraphs !== false
+    property string barDisplayMode: pluginData.barDisplayMode || "alerts"
     property int fastIntervalSecs: Math.max(1, pluginData.fastRefreshInterval || pluginData.refreshInterval || 2)
     property int slowIntervalSecs: Math.max(5, pluginData.slowRefreshInterval || 20)
     property int detailIntervalSecs: Math.max(1, pluginData.detailRefreshInterval || 2)
@@ -112,6 +113,16 @@ PluginComponent {
         running: root.selectedNetId !== "" && !root.isOffline
         repeat: true
         onTriggered: root.fetchSelectedNetDetail(root.selectedNetId)
+    }
+
+    function getBarPillText() {
+        if (root.isOffline) return "OFFLINE";
+        if (root.barDisplayMode === "status") return "ONLINE";
+        if (root.barDisplayMode === "hostname") return root.currentServerObj.name || root.currentServerObj.host;
+        if (root.barDisplayMode === "cpu_ram") return `${Math.round(root.sysResources.cpu.usage_percent)}% | ${Math.round(root.sysResources.memory.usage_percent)}%`;
+        var totalAlerts = root.crossServerAlerts.length;
+        if (totalAlerts > 0) return `${totalAlerts} Alert(s)`;
+        return "Normal";
     }
 
     function openHostsFileInEditor() {
@@ -413,12 +424,12 @@ PluginComponent {
             DankIcon {
                 name: "dns"
                 size: root.iconSize
-                color: root.isOffline ? Theme.error : (root.containerStats.problems > 0 || root.sysResources.alerts_count > 0 ? "#f59e0b" : Theme.primary)
+                color: root.isOffline ? Theme.error : "#22c55e"
                 anchors.verticalCenter: parent.verticalCenter
             }
 
             StyledText {
-                text: root.isOffline ? "OFFLINE" : `${Math.round(root.sysResources.cpu.usage_percent)}% | ${Math.round(root.sysResources.memory.usage_percent)}%`
+                text: root.getBarPillText()
                 font.pixelSize: Theme.fontSizeMedium
                 color: Theme.surfaceText
                 anchors.verticalCenter: parent.verticalCenter
@@ -434,12 +445,12 @@ PluginComponent {
             DankIcon {
                 name: "dns"
                 size: root.iconSize
-                color: root.isOffline ? Theme.error : (root.containerStats.problems > 0 || root.sysResources.alerts_count > 0 ? "#f59e0b" : Theme.primary)
+                color: root.isOffline ? Theme.error : "#22c55e"
                 anchors.horizontalCenter: parent.horizontalCenter
             }
 
             StyledText {
-                text: root.isOffline ? "OFF" : `${Math.round(root.sysResources.cpu.usage_percent)}%`
+                text: root.isOffline ? "OFF" : (root.barDisplayMode === "alerts" ? `${root.crossServerAlerts.length}` : `${Math.round(root.sysResources.cpu.usage_percent)}%`)
                 font.pixelSize: Theme.fontSizeSmall
                 color: Theme.surfaceText
                 anchors.horizontalCenter: parent.horizontalCenter

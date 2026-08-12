@@ -23,6 +23,14 @@ PluginSettings {
         defaultValue: true
     }
 
+    StringSetting {
+        settingKey: "barDisplayMode"
+        label: "Panel Bar Display Mode"
+        description: "Content shown on DankBar panel pill ('alerts', 'cpu_ram', 'status', 'hostname')"
+        defaultValue: "alerts"
+        placeholder: "alerts"
+    }
+
     SliderSetting {
         settingKey: "fastRefreshInterval"
         label: "Fast Metrics Refresh Interval"

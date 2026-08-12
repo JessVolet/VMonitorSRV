@@ -60,7 +60,7 @@ PluginComponent {
     property var netTxHistory: [0, 0, 0, 0, 0]
 
     property string selectedNetId: "eno1"
-    property var selectedNetData: ({ "name": "eno1", "rx_rate": "0 B/s", "tx_rate": "0 B/s", "ip": "192.168.100.200", "state": "UP" })
+    property var selectedNetData: ({ "name": "eno1", "status": "up", "ipv4": ["192.168.100.200"], "traffic": { "rx_bytes_sec": 0, "tx_bytes_sec": 0 } })
 
     property string expandedContainerId: ""
     property real expandedContainerCpu: 0
@@ -120,15 +120,46 @@ PluginComponent {
         return newArr;
     }
 
-    function parseRateToKb(rateStr) {
-        if (!rateStr || typeof rateStr !== "string") return 0;
-        var parts = rateStr.trim().split(" ");
+    function formatBytesRate(bytesSec) {
+        if (!bytesSec || isNaN(bytesSec)) return "0 B/s";
+        if (bytesSec >= 1024 * 1024) return (bytesSec / (1024 * 1024)).toFixed(1) + " MB/s";
+        if (bytesSec >= 1024) return (bytesSec / 1024).toFixed(1) + " KB/s";
+        return Math.round(bytesSec) + " B/s";
+    }
+
+    function getRxRateString(data) {
+        if (!data) return "0 B/s";
+        if (data.traffic && data.traffic.rx_bytes_sec !== undefined) return formatBytesRate(data.traffic.rx_bytes_sec);
+        if (data.rx_rate) return data.rx_rate;
+        if (data.rx_bytes) return formatBytesRate(data.rx_bytes);
+        return "0 B/s";
+    }
+
+    function getTxRateString(data) {
+        if (!data) return "0 B/s";
+        if (data.traffic && data.traffic.tx_bytes_sec !== undefined) return formatBytesRate(data.traffic.tx_bytes_sec);
+        if (data.tx_rate) return data.tx_rate;
+        if (data.tx_bytes) return formatBytesRate(data.tx_bytes);
+        return "0 B/s";
+    }
+
+    function getRxKbsec(data) {
+        if (!data) return 0;
+        if (data.traffic && data.traffic.rx_bytes_sec !== undefined) return data.traffic.rx_bytes_sec / 1024;
+        var rStr = getRxRateString(data);
+        var parts = rStr.trim().split(" ");
         var num = parseFloat(parts[0]) || 0;
         var unit = (parts[1] || "B/s").toUpperCase();
         if (unit.startsWith("M")) return num * 1024;
-        if (unit.startsWith("G")) return num * 1024 * 1024;
         if (unit.startsWith("K")) return num;
         return num / 1024;
+    }
+
+    function getIpString(data) {
+        if (!data) return "N/A";
+        if (Array.isArray(data.ipv4) && data.ipv4.length > 0) return data.ipv4[0];
+        if (data.ip) return data.ip;
+        return "N/A";
     }
 
     function fetchFastMetrics() {
@@ -208,10 +239,8 @@ PluginComponent {
         httpGet(endpoint, function(data) {
             if (data) {
                 root.selectedNetData = data;
-                var rxKb = parseRateToKb(data.rx_rate || data.rx_bytes || "0 B/s");
-                var txKb = parseRateToKb(data.tx_rate || data.tx_bytes || "0 B/s");
+                var rxKb = getRxKbsec(data);
                 root.netRxHistory = pushHistory(root.netRxHistory, rxKb, 20);
-                root.netTxHistory = pushHistory(root.netTxHistory, txKb, 20);
             }
         });
     }
@@ -960,13 +989,13 @@ PluginComponent {
                                         ColumnLayout {
                                             spacing: 1
                                             StyledText {
-                                                text: `Interface: ${root.selectedNetId} (IP: ${root.selectedNetData.ip || "192.168.100.200"})`
+                                                text: `Interface: ${root.selectedNetId} (IP: ${root.getIpString(root.selectedNetData)})`
                                                 font.pixelSize: Theme.fontSizeSmall
                                                 font.weight: Font.Bold
                                                 color: Theme.surfaceText
                                             }
                                             StyledText {
-                                                text: `RX Rate: ${root.selectedNetData.rx_rate || root.selectedNetData.rx_bytes || "0 B/s"}  |  TX Rate: ${root.selectedNetData.tx_rate || root.selectedNetData.tx_bytes || "0 B/s"}`
+                                                text: `RX Rate: ${root.getRxRateString(root.selectedNetData)}  |  TX Rate: ${root.getTxRateString(root.selectedNetData)}`
                                                 font.pixelSize: Theme.fontSizeSmall - 1
                                                 color: Theme.surfaceVariantText
                                             }

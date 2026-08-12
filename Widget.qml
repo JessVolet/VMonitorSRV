@@ -175,6 +175,30 @@ PluginComponent {
         return "N/A";
     }
 
+    function getMetricColor(value) {
+        if (value < 50) return Theme.primary;
+        if (value < 75) return "#f59e0b";
+        return Theme.error;
+    }
+
+    function getStorageColor(value) {
+        if (value >= 75) return Theme.error;
+        if (value >= 50) return "#f59e0b";
+        return Theme.primary;
+    }
+
+    function getOsIconName(osName) {
+        if (!osName || typeof osName !== "string") return "dns";
+        var lower = osName.toLowerCase();
+        if (lower.includes("fedora")) return "fedora";
+        if (lower.includes("ubuntu")) return "ubuntu";
+        if (lower.includes("debian")) return "debian";
+        if (lower.includes("arch")) return "archlinux";
+        if (lower.includes("alpine")) return "alpine";
+        if (lower.includes("centos") || lower.includes("rhel") || lower.includes("red hat")) return "redhat";
+        return "dns";
+    }
+
     function fetchFastMetrics() {
         httpGet(root.baseUrl + "/resources", function(data) {
             if (data) {
@@ -357,12 +381,6 @@ PluginComponent {
         Quickshell.execDetached(["dms", "cl", "copy", id]);
     }
 
-    function getMetricColor(value) {
-        if (value < 60) return Theme.primary;
-        if (value < 85) return "#f59e0b";
-        return Theme.error;
-    }
-
     function bytesToGb(bytes) {
         if (!bytes || isNaN(bytes)) return "0.0 GB";
         return (bytes / (1024 * 1024 * 1024)).toFixed(1) + " GB";
@@ -393,7 +411,7 @@ PluginComponent {
             anchors.verticalCenter: parent.verticalCenter
 
             DankIcon {
-                name: "server"
+                name: "dns"
                 size: root.iconSize
                 color: root.isOffline ? Theme.error : (root.containerStats.problems > 0 || root.sysResources.alerts_count > 0 ? "#f59e0b" : Theme.primary)
                 anchors.verticalCenter: parent.verticalCenter
@@ -414,7 +432,7 @@ PluginComponent {
             anchors.centerIn: parent
 
             DankIcon {
-                name: "server"
+                name: "dns"
                 size: root.iconSize
                 color: root.isOffline ? Theme.error : (root.containerStats.problems > 0 || root.sysResources.alerts_count > 0 ? "#f59e0b" : Theme.primary)
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -637,7 +655,7 @@ PluginComponent {
 
                             StyledRect {
                                 Layout.fillWidth: true
-                                implicitHeight: 160
+                                implicitHeight: 165
                                 radius: Theme.cornerRadius
                                 color: Theme.surfaceContainerHigh
 
@@ -648,9 +666,17 @@ PluginComponent {
 
                                     RowLayout {
                                         Layout.fillWidth: true
+                                        spacing: Theme.spacingS
+
+                                        DankIcon {
+                                            name: root.getOsIconName(root.sysInfo.os_name)
+                                            size: 22
+                                            color: Theme.primary
+                                        }
+
                                         StyledText {
                                             text: root.sysInfo.hostname || root.currentServerObj.name || "server"
-                                            font.pixelSize: Theme.fontSizeMedium
+                                            font.pixelSize: Theme.fontSizeLarge + 2
                                             font.weight: Font.Bold
                                             color: Theme.primary
                                         }
@@ -676,7 +702,22 @@ PluginComponent {
                                         StyledText { text: root.sysInfo.hardware_model || "10SJS0FJ00"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; elide: Text.ElideRight; Layout.fillWidth: true }
 
                                         StyledText { text: "OS Name:"; font.pixelSize: Theme.fontSizeSmall; font.weight: Font.Bold; color: Theme.surfaceVariantText }
-                                        StyledText { text: root.sysInfo.os_name || "Fedora Linux 44 64bit"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; elide: Text.ElideRight; Layout.fillWidth: true }
+                                        RowLayout {
+                                            spacing: Theme.spacingXS
+                                            Layout.fillWidth: true
+                                            DankIcon {
+                                                name: root.getOsIconName(root.sysInfo.os_name)
+                                                size: 16
+                                                color: Theme.primary
+                                            }
+                                            StyledText {
+                                                text: root.sysInfo.os_name || "Fedora Linux 44 64bit"
+                                                font.pixelSize: Theme.fontSizeSmall
+                                                color: Theme.surfaceText
+                                                elide: Text.ElideRight
+                                                Layout.fillWidth: true
+                                            }
+                                        }
 
                                         StyledText { text: "Uptime:"; font.pixelSize: Theme.fontSizeSmall; font.weight: Font.Bold; color: Theme.surfaceVariantText }
                                         StyledText { text: root.sysInfo.uptime || "17 days, 17:36:20"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; elide: Text.ElideRight; Layout.fillWidth: true }
@@ -770,7 +811,7 @@ PluginComponent {
                                         StyledText {
                                             text: `${root.sysResources.disk_root.usage_percent.toFixed(1)}%`
                                             font.pixelSize: Theme.fontSizeSmall
-                                            color: root.getMetricColor(root.sysResources.disk_root.usage_percent)
+                                            color: root.getStorageColor(root.sysResources.disk_root.usage_percent)
                                             font.weight: Font.Bold
                                         }
                                     }
@@ -784,7 +825,7 @@ PluginComponent {
                                             width: parent.width * Math.min(1.0, root.sysResources.disk_root.usage_percent / 100.0)
                                             height: parent.height
                                             radius: parent.radius
-                                            color: root.getMetricColor(root.sysResources.disk_root.usage_percent)
+                                            color: root.getStorageColor(root.sysResources.disk_root.usage_percent)
                                         }
                                     }
 
@@ -948,7 +989,7 @@ PluginComponent {
                                     anchors.margins: Theme.spacingM
                                     spacing: Theme.spacingM
 
-                                    DankIcon { name: "pie_chart"; color: Theme.primary }
+                                    DankIcon { name: "pie_chart"; color: root.getStorageColor(root.sysResources.disk_root.usage_percent) }
 
                                     ColumnLayout {
                                         spacing: 2
@@ -957,7 +998,8 @@ PluginComponent {
                                         StyledText {
                                             text: `Used: ${root.sysResources.disk_root.usage_percent.toFixed(1)}% (${root.bytesToGb(root.sysResources.disk_root.used_bytes)} / ${root.bytesToGb(root.sysResources.disk_root.total_bytes)})`
                                             font.pixelSize: Theme.fontSizeSmall
-                                            color: Theme.surfaceVariantText
+                                            color: root.getStorageColor(root.sysResources.disk_root.usage_percent)
+                                            font.weight: Font.Bold
                                             elide: Text.ElideRight
                                         }
                                     }
@@ -984,7 +1026,7 @@ PluginComponent {
                                     width: 145
                                     height: 68
                                     radius: Theme.cornerRadius
-                                    color: isSelected ? Theme.primary : Theme.surfaceContainerHigh
+                                    color: isSelected ? root.getStorageColor(modelData.percent || 0) : Theme.surfaceContainerHigh
 
                                     property string subName: modelData.name || "subvol"
                                     property bool isSelected: root.selectedSubvolName === subName || (root.selectedSubvolName === "" && index === 0)
@@ -998,7 +1040,7 @@ PluginComponent {
                                             Layout.fillWidth: true
                                             DankIcon {
                                                 name: "folder"
-                                                color: isSelected ? Theme.onPrimary : Theme.primary
+                                                color: isSelected ? Theme.onPrimary : root.getStorageColor(modelData.percent || 0)
                                             }
                                             StyledText {
                                                 text: subName
@@ -1013,7 +1055,8 @@ PluginComponent {
                                         StyledText {
                                             text: `${(modelData.percent || 0).toFixed(1)}% (${root.bytesToGb(modelData.used_bytes)})`
                                             font.pixelSize: Theme.fontSizeSmall - 1
-                                            color: isSelected ? Theme.onPrimary : Theme.surfaceVariantText
+                                            color: isSelected ? Theme.onPrimary : root.getStorageColor(modelData.percent || 0)
+                                            font.weight: Font.Bold
                                             elide: Text.ElideRight
                                         }
                                     }
@@ -1041,7 +1084,7 @@ PluginComponent {
 
                                     RowLayout {
                                         Layout.fillWidth: true
-                                        DankIcon { name: "info"; color: Theme.primary }
+                                        DankIcon { name: "info"; color: root.getStorageColor(root.selectedSubvolData.percent || 0) }
                                         StyledText {
                                             text: `Selected Subvolume: ${root.selectedSubvolData.name || root.selectedSubvolName || "root"}`
                                             font.pixelSize: Theme.fontSizeMedium
@@ -1053,7 +1096,7 @@ PluginComponent {
                                             text: `${(root.selectedSubvolData.percent || 0).toFixed(1)}%`
                                             font.pixelSize: Theme.fontSizeMedium
                                             font.weight: Font.Bold
-                                            color: root.getMetricColor(root.selectedSubvolData.percent || 0)
+                                            color: root.getStorageColor(root.selectedSubvolData.percent || 0)
                                         }
                                     }
 
@@ -1067,7 +1110,7 @@ PluginComponent {
                                     StyledText {
                                         text: `Used Capacity: ${root.bytesToGb(root.selectedSubvolData.used_bytes)}`
                                         font.pixelSize: Theme.fontSizeSmall
-                                        color: Theme.primary
+                                        color: root.getStorageColor(root.selectedSubvolData.percent || 0)
                                         font.weight: Font.Bold
                                     }
                                 }

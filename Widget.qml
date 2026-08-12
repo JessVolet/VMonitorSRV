@@ -10,17 +10,33 @@ PluginComponent {
     id: root
 
     layerNamespacePlugin: "vmonitor-srv"
-    popoutWidth: 440
-    popoutHeight: 580
+    popoutWidth: 460
+    popoutHeight: 600
 
-    property string baseUrl: {
-        var url = pluginData.apiBaseUrl || "http://10.190.217.209:61208/api/widget";
-        return url.replace(/\/+$/, "");
-    }
+    property bool enableGraphs: pluginData.enableGraphs !== false
     property int intervalSecs: Math.max(1, pluginData.refreshInterval || 2)
+
+    property var serversList: {
+        try {
+            var parsed = JSON.parse(pluginData.serversConfig || "[]");
+            if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        } catch (e) {}
+        return [
+            { "name": "Fedora Primary", "host": "192.168.100.200", "port": "61208" }
+        ];
+    }
+    property int activeServerIndex: 0
+    property var currentServerObj: serversList[Math.min(activeServerIndex, serversList.length - 1)] || serversList[0]
+    property string baseUrl: {
+        var s = currentServerObj;
+        var host = s.host || "192.168.100.200";
+        var port = s.port || "61208";
+        return `http://${host}:${port}/api/widget`;
+    }
 
     property bool isOffline: false
     property int currentTab: 0
+    property bool showAlertsDrawer: false
 
     property var sysInfo: ({})
     property var sysResources: ({
@@ -36,10 +52,21 @@ PluginComponent {
     property var virtualNets: []
     property int virtualNetCount: 0
 
+    property var crossServerAlerts: []
+
+    property var cpuHistory: []
+    property var ramHistory: []
+    property var netRxHistory: []
+    property var netTxHistory: []
+
+    property string selectedNetId: "eno1"
+    property var selectedNetData: ({ "name": "eno1", "rx_rate": "0 B/s", "tx_rate": "0 B/s", "ip": "192.168.100.200" })
+
     property string expandedContainerId: ""
     property real expandedContainerCpu: 0
-    property string expandedNetId: ""
-    property var expandedNetData: ({ "rx_rate": "0 B/s", "tx_rate": "0 B/s" })
+    property var expandedContainerHistory: []
+
+    property string expandedSubvolName: ""
     property string virtualNetQuery: ""
 
     Timer {
@@ -55,7 +82,10 @@ PluginComponent {
         running: true
         repeat: true
         triggeredOnStart: true
-        onTriggered: root.fetchSlowMetrics()
+        onTriggered: {
+            root.fetchSlowMetrics();
+            root.checkCrossServerAlerts();
+        }
     }
 
     Timer {
@@ -69,21 +99,48 @@ PluginComponent {
     Timer {
         id: netDetailTimer
         interval: 1500
-        running: root.expandedNetId !== "" && !root.isOffline
+        running: root.selectedNetId !== "" && !root.isOffline
         repeat: true
-        onTriggered: root.fetchNetDetail(root.expandedNetId)
+        onTriggered: root.fetchSelectedNetDetail(root.selectedNetId)
     }
 
     function fetchAllData() {
         fetchFastMetrics();
         fetchSlowMetrics();
+        checkCrossServerAlerts();
         if (root.expandedContainerId !== "") fetchContainerCpu(root.expandedContainerId);
-        if (root.expandedNetId !== "") fetchNetDetail(root.expandedNetId);
+        if (root.selectedNetId !== "") fetchSelectedNetDetail(root.selectedNetId);
+    }
+
+    function pushHistory(arr, val, maxLen) {
+        var newArr = arr.slice();
+        newArr.push(val);
+        if (newArr.length > (maxLen || 20)) newArr.shift();
+        return newArr;
+    }
+
+    function parseRateToKb(rateStr) {
+        if (!rateStr || typeof rateStr !== "string") return 0;
+        var parts = rateStr.trim().split(" ");
+        var num = parseFloat(parts[0]) || 0;
+        var unit = (parts[1] || "B/s").toUpperCase();
+        if (unit.startsWith("M")) return num * 1024;
+        if (unit.startsWith("G")) return num * 1024 * 1024;
+        if (unit.startsWith("K")) return num;
+        return num / 1024;
     }
 
     function fetchFastMetrics() {
         httpGet(root.baseUrl + "/resources", function(data) {
-            if (data) root.sysResources = data;
+            if (data) {
+                root.sysResources = data;
+                if (data.cpu && data.cpu.usage_percent !== undefined) {
+                    root.cpuHistory = pushHistory(root.cpuHistory, data.cpu.usage_percent, 20);
+                }
+                if (data.memory && data.memory.usage_percent !== undefined) {
+                    root.ramHistory = pushHistory(root.ramHistory, data.memory.usage_percent, 20);
+                }
+            }
         });
         httpGet(root.baseUrl + "/containers/count", function(data) {
             if (data) root.containerStats = data;
@@ -105,6 +162,10 @@ PluginComponent {
                 if (Array.isArray(data) && data.length > 0) root.physicalNet = data[0];
                 else if (data.interfaces && data.interfaces.length > 0) root.physicalNet = data.interfaces[0];
                 else if (data.name) root.physicalNet = data;
+                if (!root.selectedNetId || root.selectedNetId === "eno1") {
+                    root.selectedNetId = root.physicalNet.name || "eno1";
+                    root.selectedNetData = root.physicalNet;
+                }
             }
         });
         httpGet(root.baseUrl + "/network/virtual", function(data) {
@@ -116,20 +177,57 @@ PluginComponent {
         });
     }
 
+    function fetchSelectedNetDetail(netId) {
+        if (!netId) return;
+        httpGet(root.baseUrl + "/network/" + netId, function(data) {
+            if (data) {
+                root.selectedNetData = data;
+                var rxKb = parseRateToKb(data.rx_rate || "0 B/s");
+                var txKb = parseRateToKb(data.tx_rate || "0 B/s");
+                root.netRxHistory = pushHistory(root.netRxHistory, rxKb, 20);
+                root.netTxHistory = pushHistory(root.netTxHistory, txKb, 20);
+            }
+        });
+    }
+
     function fetchContainerCpu(id) {
         if (!id) return;
         httpGet(root.baseUrl + "/containers/cpu/" + id, function(data) {
             if (data && data.usage_percent !== undefined) {
                 root.expandedContainerCpu = data.usage_percent;
+                root.expandedContainerHistory = pushHistory(root.expandedContainerHistory, data.usage_percent, 15);
             }
         });
     }
 
-    function fetchNetDetail(id) {
-        if (!id) return;
-        httpGet(root.baseUrl + "/network/" + id, function(data) {
-            if (data) root.expandedNetData = data;
-        });
+    function checkCrossServerAlerts() {
+        var alertsAcc = [];
+        for (var i = 0; i < root.serversList.length; i++) {
+            (function(srvIndex) {
+                var srv = root.serversList[srvIndex];
+                var url = `http://${srv.host}:${srv.port}/api/widget/resources`;
+                var xhr = new XMLHttpRequest();
+                xhr.open("GET", url, true);
+                xhr.timeout = 2000;
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                        try {
+                            var res = JSON.parse(xhr.responseText);
+                            if (res.alerts_count > 0) {
+                                alertsAcc.push({
+                                    "serverName": srv.name || srv.host,
+                                    "host": srv.host,
+                                    "count": res.alerts_count,
+                                    "log": `[WARN] ${res.alerts_count} active alert(s) on ${srv.name}`
+                                });
+                                root.crossServerAlerts = alertsAcc;
+                            }
+                        } catch (e) {}
+                    }
+                };
+                xhr.send();
+            })(i);
+        }
     }
 
     function httpGet(url, callback) {
@@ -198,7 +296,7 @@ PluginComponent {
     }
 
     function bytesToGb(bytes) {
-        if (!bytes || isNaN(bytes)) return "0 GB";
+        if (!bytes || isNaN(bytes)) return "0.0 GB";
         return (bytes / (1024 * 1024 * 1024)).toFixed(1) + " GB";
     }
 
@@ -256,8 +354,8 @@ PluginComponent {
     popoutContent: Component {
         PopoutComponent {
             id: popout
-            headerText: root.sysInfo.hostname || "VMonitorSRV"
-            detailsText: root.isOffline ? "Status: OFFLINE" : `IP: ${root.physicalNet.ip || "192.168.100.200"} • Up: ${root.sysInfo.uptime || "N/A"}`
+            headerText: root.sysInfo.hostname || root.currentServerObj.name || "VMonitorSRV"
+            detailsText: root.isOffline ? "Status: OFFLINE" : `IP: ${root.currentServerObj.host} • Up: ${root.sysInfo.uptime || "N/A"}`
             showCloseButton: true
 
             ColumnLayout {
@@ -266,12 +364,100 @@ PluginComponent {
 
                 RowLayout {
                     Layout.fillWidth: true
+                    spacing: Theme.spacingS
+
+                    DankIcon { name: "dns"; color: Theme.primary }
+
+                    StyledText {
+                        text: "Server:"
+                        font.pixelSize: Theme.fontSizeSmall
+                        font.weight: Font.Bold
+                        color: Theme.surfaceText
+                    }
+
+                    Row {
+                        spacing: 4
+                        Layout.fillWidth: true
+
+                        Repeater {
+                            model: root.serversList
+                            delegate: DankButton {
+                                text: modelData.name || modelData.host
+                                backgroundColor: index === root.activeServerIndex ? Theme.primary : Theme.surfaceContainer
+                                textColor: index === root.activeServerIndex ? Theme.onPrimary : Theme.surfaceText
+                                onClicked: {
+                                    root.activeServerIndex = index;
+                                    root.cpuHistory = [];
+                                    root.ramHistory = [];
+                                    root.netRxHistory = [];
+                                    root.netTxHistory = [];
+                                    root.fetchAllData();
+                                }
+                            }
+                        }
+                    }
+
+                    DankButton {
+                        iconName: "warning"
+                        text: `${root.crossServerAlerts.length}`
+                        backgroundColor: root.crossServerAlerts.length > 0 ? "#f59e0b" : Theme.surfaceContainer
+                        textColor: root.crossServerAlerts.length > 0 ? "#111" : Theme.surfaceText
+                        onClicked: root.showAlertsDrawer = !root.showAlertsDrawer
+                    }
+                }
+
+                StyledRect {
+                    visible: root.showAlertsDrawer
+                    Layout.fillWidth: true
+                    implicitHeight: Math.min(120, Math.max(40, root.crossServerAlerts.length * 45))
+                    radius: Theme.cornerRadius
+                    color: "#332211"
+
+                    ColumnLayout {
+                        anchors.fill: parent
+                        anchors.margins: Theme.spacingS
+
+                        StyledText {
+                            text: "Cross-Server Active Alerts"
+                            font.pixelSize: Theme.fontSizeSmall
+                            font.weight: Font.Bold
+                            color: "#f59e0b"
+                        }
+
+                        ListView {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            clip: true
+                            model: root.crossServerAlerts
+                            delegate: RowLayout {
+                                width: parent.width
+                                spacing: Theme.spacingS
+                                StyledText {
+                                    text: `[${modelData.serverName}]`
+                                    font.pixelSize: Theme.fontSizeSmall - 1
+                                    font.weight: Font.Bold
+                                    color: "#f59e0b"
+                                }
+                                StyledText {
+                                    text: modelData.log
+                                    font.pixelSize: Theme.fontSizeSmall - 1
+                                    color: Theme.surfaceText
+                                    elide: Text.ElideRight
+                                    Layout.fillWidth: true
+                                }
+                            }
+                        }
+                    }
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
                     spacing: Theme.spacingXS
 
                     DankButton {
                         Layout.fillWidth: true
                         iconName: "dashboard"
-                        text: "Dashboard"
+                        text: "Overview"
                         backgroundColor: root.currentTab === 0 ? Theme.primary : Theme.surfaceContainer
                         textColor: root.currentTab === 0 ? Theme.onPrimary : Theme.surfaceText
                         onClicked: root.currentTab = 0
@@ -288,8 +474,8 @@ PluginComponent {
 
                     DankButton {
                         Layout.fillWidth: true
-                        iconName: "dns"
-                        text: "Net & Podman"
+                        iconName: "lan"
+                        text: "Net & Containers"
                         backgroundColor: root.currentTab === 2 ? Theme.primary : Theme.surfaceContainer
                         textColor: root.currentTab === 2 ? Theme.onPrimary : Theme.surfaceText
                         onClicked: root.currentTab = 2
@@ -300,7 +486,7 @@ PluginComponent {
                     Layout.fillWidth: true
 
                     StyledText {
-                        text: root.isOffline ? "Server Offline" : "Server Active"
+                        text: root.isOffline ? "Server Status: OFFLINE" : "Server Status: ONLINE"
                         font.pixelSize: Theme.fontSizeSmall
                         font.weight: Font.Bold
                         color: root.isOffline ? Theme.error : "#a6e3a1"
@@ -326,8 +512,8 @@ PluginComponent {
 
                 Flickable {
                     Layout.fillWidth: true
-                    implicitHeight: 430
-                    height: 430
+                    implicitHeight: 410
+                    height: 410
                     contentHeight: tabContent.implicitHeight
                     clip: true
 
@@ -343,7 +529,7 @@ PluginComponent {
 
                             StyledRect {
                                 Layout.fillWidth: true
-                                implicitHeight: 70
+                                implicitHeight: 68
                                 radius: Theme.cornerRadius
                                 color: Theme.surfaceContainerHigh
 
@@ -353,14 +539,14 @@ PluginComponent {
                                     spacing: 2
 
                                     StyledText {
-                                        text: root.sysInfo.hostname || "Fedora Server"
+                                        text: root.sysInfo.hostname || root.currentServerObj.name || "Fedora Server"
                                         font.pixelSize: Theme.fontSizeMedium
                                         font.weight: Font.Bold
                                         color: Theme.surfaceText
                                     }
 
                                     StyledText {
-                                        text: `${root.sysInfo.cpu_name || "CPU"} • ${root.sysInfo.os_name || "Fedora Linux"} (${root.sysInfo.kernel_version || "Kernel"})`
+                                        text: `${root.sysInfo.cpu_name || "CPU"} • ${root.sysInfo.os_name || "Linux"} (${root.sysInfo.kernel_version || "Kernel"})`
                                         font.pixelSize: Theme.fontSizeSmall
                                         color: Theme.surfaceVariantText
                                         elide: Text.ElideRight
@@ -370,7 +556,7 @@ PluginComponent {
 
                             StyledRect {
                                 Layout.fillWidth: true
-                                implicitHeight: 140
+                                implicitHeight: root.enableGraphs ? 190 : 135
                                 radius: Theme.cornerRadius
                                 color: Theme.surfaceContainerHigh
 
@@ -453,6 +639,38 @@ PluginComponent {
                                             color: root.getMetricColor(root.sysResources.disk_root.usage_percent)
                                         }
                                     }
+
+                                    Canvas {
+                                        visible: root.enableGraphs
+                                        Layout.fillWidth: true
+                                        implicitHeight: 35
+                                        onPaint: {
+                                            var ctx = getContext("2d");
+                                            ctx.clearRect(0, 0, width, height);
+                                            if (root.cpuHistory.length < 2) return;
+
+                                            ctx.beginPath();
+                                            ctx.lineWidth = 2;
+                                            ctx.strokeStyle = root.getMetricColor(root.sysResources.cpu.usage_percent);
+
+                                            var step = width / (root.cpuHistory.length - 1);
+                                            for (var i = 0; i < root.cpuHistory.length; i++) {
+                                                var val = root.cpuHistory[i];
+                                                var y = height - (val / 100.0 * height);
+                                                var x = i * step;
+                                                if (i === 0) ctx.moveTo(x, y);
+                                                else ctx.lineTo(x, y);
+                                            }
+                                            ctx.stroke();
+                                        }
+
+                                        Connections {
+                                            target: root
+                                            function onCpuHistoryChanged() {
+                                                if (root.enableGraphs) parent.requestPaint();
+                                            }
+                                        }
+                                    }
                                 }
                             }
 
@@ -511,7 +729,7 @@ PluginComponent {
 
                             StyledRect {
                                 Layout.fillWidth: true
-                                implicitHeight: 65
+                                implicitHeight: 75
                                 radius: Theme.cornerRadius
                                 color: Theme.surfaceContainerHigh
 
@@ -524,11 +742,13 @@ PluginComponent {
 
                                     ColumnLayout {
                                         spacing: 2
+                                        Layout.fillWidth: true
                                         StyledText { text: "Root Disk Storage Pool"; font.pixelSize: Theme.fontSizeMedium; font.weight: Font.Bold; color: Theme.surfaceText }
                                         StyledText {
-                                            text: `Used: ${root.sysResources.disk_root.usage_percent.toFixed(1)}%`
+                                            text: `Used: ${root.sysResources.disk_root.usage_percent.toFixed(1)}% (${root.bytesToGb(root.sysResources.disk_root.used_bytes)} / ${root.bytesToGb(root.sysResources.disk_root.total_bytes)})`
                                             font.pixelSize: Theme.fontSizeSmall
                                             color: Theme.surfaceVariantText
+                                            elide: Text.ElideRight
                                         }
                                     }
                                 }
@@ -543,48 +763,82 @@ PluginComponent {
 
                             ListView {
                                 Layout.fillWidth: true
-                                implicitHeight: Math.min(260, Math.max(60, root.subvolumesList.length * 52))
+                                implicitHeight: Math.min(260, Math.max(60, root.subvolumesList.length * (isExpanded ? 110 : 52)))
                                 clip: true
                                 model: root.subvolumesList
                                 spacing: Theme.spacingS
 
                                 delegate: StyledRect {
                                     width: ListView.view.width
-                                    height: 48
+                                    height: isExpanded ? 105 : 48
                                     radius: Theme.cornerRadiusSmall
                                     color: Theme.surfaceContainerHigh
 
-                                    RowLayout {
+                                    property string subName: modelData.name || "subvol"
+                                    property bool isExpanded: root.expandedSubvolName === subName
+
+                                    ColumnLayout {
                                         anchors.fill: parent
                                         anchors.margins: Theme.spacingS
+                                        spacing: Theme.spacingXS
 
-                                        DankIcon { name: "folder"; color: Theme.primary }
-
-                                        ColumnLayout {
-                                            spacing: 1
+                                        RowLayout {
                                             Layout.fillWidth: true
 
-                                            StyledText {
-                                                text: modelData.name || "subvol"
-                                                font.pixelSize: Theme.fontSizeSmall
-                                                font.weight: Font.Bold
-                                                color: Theme.surfaceText
-                                                elide: Text.ElideRight
+                                            DankIcon { name: "folder"; color: Theme.primary }
+
+                                            ColumnLayout {
+                                                spacing: 1
+                                                Layout.fillWidth: true
+
+                                                StyledText {
+                                                    text: subName
+                                                    font.pixelSize: Theme.fontSizeSmall
+                                                    font.weight: Font.Bold
+                                                    color: Theme.surfaceText
+                                                    elide: Text.ElideRight
+                                                }
+
+                                                StyledText {
+                                                    text: `${modelData.mount || "/"} • ${root.bytesToGb(modelData.used_bytes)}`
+                                                    font.pixelSize: Theme.fontSizeSmall - 1
+                                                    color: Theme.surfaceVariantText
+                                                    elide: Text.ElideRight
+                                                }
                                             }
 
                                             StyledText {
-                                                text: `${modelData.mount || "/"} • ${root.bytesToGb(modelData.used_bytes)}`
-                                                font.pixelSize: Theme.fontSizeSmall - 1
-                                                color: Theme.surfaceVariantText
-                                                elide: Text.ElideRight
+                                                text: `${(modelData.percent || 0).toFixed(1)}%`
+                                                font.pixelSize: Theme.fontSizeSmall
+                                                font.weight: Font.Bold
+                                                color: root.getMetricColor(modelData.percent || 0)
+                                            }
+
+                                            DankButton {
+                                                iconName: isExpanded ? "expand_less" : "expand_more"
+                                                onClicked: {
+                                                    if (isExpanded) root.expandedSubvolName = "";
+                                                    else root.expandedSubvolName = subName;
+                                                }
                                             }
                                         }
 
-                                        StyledText {
-                                            text: `${(modelData.percent || 0).toFixed(1)}%`
-                                            font.pixelSize: Theme.fontSizeSmall
-                                            font.weight: Font.Bold
-                                            color: root.getMetricColor(modelData.percent || 0)
+                                        ColumnLayout {
+                                            visible: isExpanded
+                                            Layout.fillWidth: true
+                                            spacing: 2
+
+                                            StyledText {
+                                                text: `Mount Point: ${modelData.mount || "/"}`
+                                                font.pixelSize: Theme.fontSizeSmall - 1
+                                                color: Theme.surfaceText
+                                            }
+                                            StyledText {
+                                                text: `Capacity Usage: ${root.bytesToGb(modelData.used_bytes)} (${(modelData.percent || 0).toFixed(1)}%)`
+                                                font.pixelSize: Theme.fontSizeSmall - 1
+                                                color: Theme.primary
+                                                font.weight: Font.Bold
+                                            }
                                         }
                                     }
                                 }
@@ -597,7 +851,7 @@ PluginComponent {
                             spacing: Theme.spacingM
 
                             StyledText {
-                                text: `Physical Network (${root.physicalNet.name || "eno1"})`
+                                text: `Network Monitor (${root.selectedNetId})`
                                 font.pixelSize: Theme.fontSizeMedium
                                 font.weight: Font.Bold
                                 color: Theme.surfaceText
@@ -605,35 +859,77 @@ PluginComponent {
 
                             StyledRect {
                                 Layout.fillWidth: true
-                                implicitHeight: 52
+                                implicitHeight: root.enableGraphs ? 110 : 55
                                 radius: Theme.cornerRadius
                                 color: Theme.surfaceContainerHigh
 
-                                RowLayout {
+                                ColumnLayout {
                                     anchors.fill: parent
                                     anchors.margins: Theme.spacingS
+                                    spacing: Theme.spacingXS
 
-                                    DankIcon { name: "lan"; color: Theme.primary }
+                                    RowLayout {
+                                        Layout.fillWidth: true
 
-                                    ColumnLayout {
-                                        spacing: 1
-                                        StyledText {
-                                            text: `IP: ${root.physicalNet.ip || "192.168.100.200"}`
-                                            font.pixelSize: Theme.fontSizeSmall
-                                            font.weight: Font.Bold
-                                            color: Theme.surfaceText
+                                        DankIcon { name: "lan"; color: Theme.primary }
+
+                                        ColumnLayout {
+                                            spacing: 1
+                                            StyledText {
+                                                text: `Interface: ${root.selectedNetId} (IP: ${root.selectedNetData.ip || "192.168.100.200"})`
+                                                font.pixelSize: Theme.fontSizeSmall
+                                                font.weight: Font.Bold
+                                                color: Theme.surfaceText
+                                            }
+                                            StyledText {
+                                                text: `RX: ${root.selectedNetData.rx_rate || "0 B/s"}  |  TX: ${root.selectedNetData.tx_rate || "0 B/s"}`
+                                                font.pixelSize: Theme.fontSizeSmall - 1
+                                                color: Theme.surfaceVariantText
+                                            }
                                         }
-                                        StyledText {
-                                            text: `RX: ${root.physicalNet.rx_rate || "0 B/s"}  |  TX: ${root.physicalNet.tx_rate || "0 B/s"}`
-                                            font.pixelSize: Theme.fontSizeSmall - 1
-                                            color: Theme.surfaceVariantText
+                                    }
+
+                                    Canvas {
+                                        visible: root.enableGraphs
+                                        Layout.fillWidth: true
+                                        implicitHeight: 45
+                                        onPaint: {
+                                            var ctx = getContext("2d");
+                                            ctx.clearRect(0, 0, width, height);
+                                            if (root.netRxHistory.length < 2) return;
+
+                                            var maxRx = 1;
+                                            for (var i = 0; i < root.netRxHistory.length; i++) {
+                                                if (root.netRxHistory[i] > maxRx) maxRx = root.netRxHistory[i];
+                                            }
+
+                                            ctx.beginPath();
+                                            ctx.lineWidth = 2;
+                                            ctx.strokeStyle = "#89b4fa";
+
+                                            var step = width / (root.netRxHistory.length - 1);
+                                            for (var j = 0; j < root.netRxHistory.length; j++) {
+                                                var val = root.netRxHistory[j];
+                                                var y = height - (val / maxRx * height);
+                                                var x = j * step;
+                                                if (j === 0) ctx.moveTo(x, y);
+                                                else ctx.lineTo(x, y);
+                                            }
+                                            ctx.stroke();
+                                        }
+
+                                        Connections {
+                                            target: root
+                                            function onNetRxHistoryChanged() {
+                                                if (root.enableGraphs) parent.requestPaint();
+                                            }
                                         }
                                     }
                                 }
                             }
 
                             StyledText {
-                                text: `Virtual Interfaces (${root.virtualNetCount})`
+                                text: `Select Network Interface (${root.virtualNetCount + 1})`
                                 font.pixelSize: Theme.fontSizeMedium
                                 font.weight: Font.Bold
                                 color: Theme.surfaceText
@@ -641,7 +937,7 @@ PluginComponent {
 
                             DankTextField {
                                 Layout.fillWidth: true
-                                placeholderText: "Filter virtual interfaces..."
+                                placeholderText: "Filter interfaces..."
                                 text: root.virtualNetQuery
                                 onTextChanged: root.virtualNetQuery = text
                             }
@@ -655,51 +951,37 @@ PluginComponent {
 
                                 delegate: StyledRect {
                                     width: ListView.view.width
-                                    height: isExpanded ? 70 : 38
+                                    height: 38
                                     radius: Theme.cornerRadiusSmall
-                                    color: isExpanded ? Theme.surfaceContainerHighest : Theme.surfaceContainerHigh
+                                    color: isSelected ? Theme.surfaceContainerHighest : Theme.surfaceContainerHigh
 
                                     property string itemIfName: typeof modelData === "string" ? modelData : (modelData.name || `vnet${index}`)
-                                    property bool isExpanded: root.expandedNetId === itemIfName
+                                    property bool isSelected: root.selectedNetId === itemIfName
 
-                                    ColumnLayout {
+                                    RowLayout {
                                         anchors.fill: parent
                                         anchors.margins: Theme.spacingS
 
-                                        RowLayout {
-                                            Layout.fillWidth: true
-
-                                            DankIcon { name: "hub"; color: Theme.primary }
-
-                                            StyledText {
-                                                text: itemIfName
-                                                font.pixelSize: Theme.fontSizeSmall
-                                                font.weight: Font.Bold
-                                                color: Theme.surfaceText
-                                                Layout.fillWidth: true
-                                            }
-
-                                            DankButton {
-                                                iconName: isExpanded ? "expand_less" : "expand_more"
-                                                onClicked: {
-                                                    if (isExpanded) root.expandedNetId = "";
-                                                    else {
-                                                        root.expandedNetId = itemIfName;
-                                                        root.fetchNetDetail(itemIfName);
-                                                    }
-                                                }
-                                            }
+                                        DankIcon {
+                                            name: isSelected ? "check_circle" : "hub"
+                                            color: isSelected ? "#a6e3a1" : Theme.primary
                                         }
 
-                                        RowLayout {
-                                            visible: isExpanded
+                                        StyledText {
+                                            text: itemIfName
+                                            font.pixelSize: Theme.fontSizeSmall
+                                            font.weight: isSelected ? Font.Bold : Font.Normal
+                                            color: isSelected ? Theme.primary : Theme.surfaceText
                                             Layout.fillWidth: true
+                                        }
 
-                                            StyledText {
-                                                text: `Live Traffic -> RX: ${root.expandedNetData.rx_rate || "0 B/s"} | TX: ${root.expandedNetData.tx_rate || "0 B/s"}`
-                                                font.pixelSize: Theme.fontSizeSmall - 1
-                                                color: Theme.primary
-                                                font.weight: Font.Bold
+                                        DankButton {
+                                            text: isSelected ? "Active" : "Select"
+                                            onClicked: {
+                                                root.selectedNetId = itemIfName;
+                                                root.netRxHistory = [];
+                                                root.netTxHistory = [];
+                                                root.fetchSelectedNetDetail(itemIfName);
                                             }
                                         }
                                     }
@@ -715,14 +997,14 @@ PluginComponent {
 
                             ListView {
                                 Layout.fillWidth: true
-                                implicitHeight: Math.min(240, Math.max(60, root.containerList.length * (isExpanded ? 105 : 62)))
+                                implicitHeight: Math.min(240, Math.max(60, root.containerList.length * (isExpanded ? 120 : 62)))
                                 clip: true
                                 model: root.containerList
                                 spacing: Theme.spacingS
 
                                 delegate: StyledRect {
                                     width: ListView.view.width
-                                    height: isExpanded ? 100 : 58
+                                    height: isExpanded ? 115 : 58
                                     radius: Theme.cornerRadius
                                     color: modelData.status === "running" ? Theme.surfaceContainerHigh : Theme.surfaceContainer
 
@@ -771,6 +1053,7 @@ PluginComponent {
                                                     } else {
                                                         root.expandedContainerId = cId;
                                                         root.expandedContainerCpu = 0;
+                                                        root.expandedContainerHistory = [];
                                                         root.fetchContainerCpu(cId);
                                                     }
                                                 }
@@ -792,36 +1075,71 @@ PluginComponent {
                                             }
                                         }
 
-                                        RowLayout {
+                                        ColumnLayout {
                                             visible: isExpanded
                                             Layout.fillWidth: true
-                                            spacing: Theme.spacingS
+                                            spacing: 2
 
-                                            StyledText {
-                                                text: "Live CPU Usage:"
-                                                font.pixelSize: Theme.fontSizeSmall
-                                                color: Theme.surfaceText
-                                            }
-
-                                            StyledRect {
+                                            RowLayout {
                                                 Layout.fillWidth: true
-                                                height: 6
-                                                radius: 3
-                                                color: Theme.surfaceContainerHighest
+                                                StyledText {
+                                                    text: "Live CPU Usage:"
+                                                    font.pixelSize: Theme.fontSizeSmall
+                                                    color: Theme.surfaceText
+                                                }
 
                                                 StyledRect {
-                                                    width: parent.width * Math.min(1.0, root.expandedContainerCpu / 100.0)
-                                                    height: parent.height
-                                                    radius: parent.radius
+                                                    Layout.fillWidth: true
+                                                    height: 6
+                                                    radius: 3
+                                                    color: Theme.surfaceContainerHighest
+
+                                                    StyledRect {
+                                                        width: parent.width * Math.min(1.0, root.expandedContainerCpu / 100.0)
+                                                        height: parent.height
+                                                        radius: parent.radius
+                                                        color: root.getMetricColor(root.expandedContainerCpu)
+                                                    }
+                                                }
+
+                                                StyledText {
+                                                    text: `${root.expandedContainerCpu.toFixed(1)}%`
+                                                    font.pixelSize: Theme.fontSizeSmall
+                                                    font.weight: Font.Bold
                                                     color: root.getMetricColor(root.expandedContainerCpu)
                                                 }
                                             }
 
-                                            StyledText {
-                                                text: `${root.expandedContainerCpu.toFixed(1)}%`
-                                                font.pixelSize: Theme.fontSizeSmall
-                                                font.weight: Font.Bold
-                                                color: root.getMetricColor(root.expandedContainerCpu)
+                                            Canvas {
+                                                visible: root.enableGraphs
+                                                Layout.fillWidth: true
+                                                implicitHeight: 25
+                                                onPaint: {
+                                                    var ctx = getContext("2d");
+                                                    ctx.clearRect(0, 0, width, height);
+                                                    if (root.expandedContainerHistory.length < 2) return;
+
+                                                    ctx.beginPath();
+                                                    ctx.lineWidth = 2;
+                                                    ctx.strokeStyle = root.getMetricColor(root.expandedContainerCpu);
+
+                                                    var step = width / (root.expandedContainerHistory.length - 1);
+                                                    for (var i = 0; i < root.expandedContainerHistory.length; i++) {
+                                                        var val = root.expandedContainerHistory[i];
+                                                        var y = height - (val / 100.0 * height);
+                                                        var x = i * step;
+                                                        if (i === 0) ctx.moveTo(x, y);
+                                                        else ctx.lineTo(x, y);
+                                                    }
+                                                    ctx.stroke();
+                                                }
+
+                                                Connections {
+                                                    target: root
+                                                    function onExpandedContainerHistoryChanged() {
+                                                        if (root.enableGraphs) parent.requestPaint();
+                                                    }
+                                                }
                                             }
                                         }
                                     }

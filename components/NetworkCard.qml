@@ -2,11 +2,12 @@ import QtQuick
 import QtQuick.Layouts
 import qs.Common
 import qs.Widgets
+import qs.DCommon.Widgets
 
 StyledRect {
     id: root
 
-    property string selectedNetId: "eno1"
+    property string selectedNetId: ""
     property var selectedNetData: ({})
     property var netRxHistory: []
     property bool enableGraphs: true
@@ -23,8 +24,10 @@ StyledRect {
 
     Layout.fillWidth: true
     implicitHeight: netCol.implicitHeight + Theme.spacingM * 2
-    radius: Theme.cornerRadius
+    radius: Theme.cornerRadius * 1.5
     color: Theme.surfaceContainerHigh
+    border.width: 1
+    border.color: Theme.withAlpha(Theme.outlineStrong, 0.32)
 
     ColumnLayout {
         id: netCol
@@ -34,32 +37,39 @@ StyledRect {
 
         RowLayout {
             Layout.fillWidth: true
-            DankIcon { name: "lan"; color: Theme.primary }
-            StyledText {
-                text: "Network"
-                font.pixelSize: Theme.fontSizeLarge
-                font.weight: Font.Bold
-                color: Theme.surfaceText
-            }
+            DIcon { name: "lan"; size: 21; color: Theme.primary }
+            StyledText { text: "Network"; font.pixelSize: Theme.fontSizeLarge; font.weight: Font.Bold; color: Theme.surfaceText; Layout.fillWidth: true }
+            StyledText { text: String(root.allInterfacesList.length) + " interfaces"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceVariantText }
         }
 
-        RowLayout {
+        StyledRect {
             Layout.fillWidth: true
-
-            DankIcon { name: "lan"; color: Theme.primary }
-
+            implicitHeight: netSummary.implicitHeight + Theme.spacingM * 2
+            radius: Theme.cornerRadius
+            color: Theme.surfaceContainerHighest
             ColumnLayout {
-                spacing: 1
+                id: netSummary
+                anchors.fill: parent
+                anchors.margins: Theme.spacingM
+                spacing: Theme.spacingS
                 StyledText {
-                    text: `Interface: ${root.selectedNetId} (IP: ${root.getIpStringFunc(root.selectedNetData)})`
-                    font.pixelSize: Theme.fontSizeSmall
+                    text: root.selectedNetId || "No interface selected"
+                    font.pixelSize: Theme.fontSizeMedium
                     font.weight: Font.Bold
                     color: Theme.surfaceText
                 }
                 StyledText {
-                    text: `RX Rate: ${root.getRxRateStringFunc(root.selectedNetData)}  |  TX Rate: ${root.getTxRateStringFunc(root.selectedNetData)}`
-                    font.pixelSize: Theme.fontSizeSmall - 1
+                    text: "IP  " + root.getIpStringFunc(root.selectedNetData) + "  ·  " + (root.selectedNetData.status || "Status N/A") + "  ·  Gateway " + (root.selectedNetData.gateway || "N/A")
+                    font.pixelSize: Theme.fontSizeSmall
                     color: Theme.surfaceVariantText
+                    Layout.fillWidth: true
+                    elide: Text.ElideRight
+                }
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: Theme.spacingM
+                    StyledText { text: "↓ RX  " + root.getRxRateStringFunc(root.selectedNetData); font.pixelSize: Theme.fontSizeSmall; font.weight: Font.Bold; color: Theme.primary }
+                    StyledText { text: "↑ TX  " + root.getTxRateStringFunc(root.selectedNetData); font.pixelSize: Theme.fontSizeSmall; font.weight: Font.Bold; color: Theme.secondary }
                 }
             }
         }
@@ -203,13 +213,13 @@ StyledRect {
         }
 
         StyledText {
-            text: `Select Interface to Graph (${root.allInterfacesList.length})`
+            text: "Select interface"
             font.pixelSize: Theme.fontSizeMedium
             font.weight: Font.Bold
             color: Theme.surfaceText
         }
 
-        DankTextField {
+        DTextField {
             Layout.fillWidth: true
             placeholderText: "Filter physical & virtual interfaces..."
             text: root.virtualNetQuery
@@ -226,18 +236,21 @@ StyledRect {
             delegate: StyledRect {
                 width: ListView.view.width
                 height: 38
-                radius: Theme.cornerRadiusSmall
-                color: isSelected ? Theme.surfaceContainerHighest : Theme.surfaceContainerHighest
+                radius: Theme.cornerRadius
+                color: isSelected ? Theme.withAlpha(Theme.primary, 0.12) : Theme.surfaceContainerHighest
+                border.width: 1
+                border.color: isSelected ? Theme.withAlpha(Theme.primary, 0.50) : Theme.withAlpha(Theme.outlineStrong, 0.22)
 
-                property string itemIfName: modelData.name || `if${index}`
+                property string itemIfId: modelData.id || modelData.name || `if${index}`
+                property string itemIfName: modelData.name || itemIfId
                 property bool isVirt: modelData.isVirtual
-                property bool isSelected: root.selectedNetId === itemIfName
+                property bool isSelected: root.selectedNetId === itemIfId
 
                 RowLayout {
                     anchors.fill: parent
                     anchors.margins: Theme.spacingS
 
-                    DankIcon {
+                    DIcon {
                         name: isSelected ? "check_circle" : (isVirt ? "hub" : "lan")
                         color: isSelected ? Theme.primary : Theme.surfaceVariantText
                     }
@@ -268,7 +281,7 @@ StyledRect {
 
                 MouseArea {
                     anchors.fill: parent
-                    onClicked: root.selectInterface(itemIfName)
+                    onClicked: root.selectInterface(itemIfId)
                 }
             }
         }

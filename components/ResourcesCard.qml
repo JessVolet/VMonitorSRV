@@ -2,240 +2,149 @@ import QtQuick
 import QtQuick.Layouts
 import qs.Common
 import qs.Widgets
+import qs.DCommon.Widgets
 
 StyledRect {
     id: root
-
-    property var sysResources: ({ "cpu": { "usage_percent": 0, "temp_c": 0 }, "memory": { "usage_percent": 0 }, "disk_root": { "usage_percent": 0 } })
+    property var sysResources: ({ cpu: {}, memory: {}, disk_root: {} })
+    property bool showCpuTemperature: true
     property bool enableGraphs: true
     property var cpuHistory: []
-    property var getMetricColorFunc: function(val) { return Theme.primary; }
-    property var getStorageColorFunc: function(val) { return Theme.primary; }
+    property var getMetricColorFunc: function(value) { return Theme.primary; }
+    property var getStorageColorFunc: function(value) { return Theme.primary; }
+
+    readonly property real cpuValue: Number(sysResources.cpu.usage_percent) || 0
+    readonly property real ramValue: Number(sysResources.memory.usage_percent) || 0
+    readonly property real diskValue: Number(sysResources.disk_root.usage_percent) || 0
 
     Layout.fillWidth: true
-    implicitHeight: resCol.implicitHeight + Theme.spacingM * 2
+    implicitHeight: contents.implicitHeight + Theme.spacingM * 2
     radius: Theme.cornerRadius
     color: Theme.surfaceContainerHigh
 
+    onCpuValueChanged: cpuRing.requestPaint()
+    onCpuHistoryChanged: historyGraph.requestPaint()
+
     ColumnLayout {
-        id: resCol
+        id: contents
         anchors.fill: parent
         anchors.margins: Theme.spacingM
-        spacing: Theme.spacingS
+        spacing: Theme.spacingM
 
         RowLayout {
             Layout.fillWidth: true
-            DankIcon { name: "speed"; color: Theme.primary }
-            StyledText {
-                text: "Resources"
-                font.pixelSize: Theme.fontSizeLarge
-                font.weight: Font.Bold
-                color: Theme.surfaceText
-            }
+            DIcon { name: "monitor_heart"; size: 21; color: Theme.primary }
+            StyledText { text: "Resources"; font.pixelSize: Theme.fontSizeLarge; font.weight: Font.Bold; color: Theme.surfaceText; Layout.fillWidth: true }
         }
 
         RowLayout {
             Layout.fillWidth: true
-            StyledText { text: "CPU Usage"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; font.weight: Font.Bold }
-            Item { Layout.fillWidth: true }
-            StyledText {
-                text: `${(root.sysResources.cpu.usage_percent || 0).toFixed(1)}% (${root.sysResources.cpu.temp_c || 0}°C)`
-                font.pixelSize: Theme.fontSizeSmall
-                color: root.getMetricColorFunc(root.sysResources.cpu.usage_percent || 0)
-                font.weight: Font.Bold
-            }
-        }
+            spacing: Theme.spacingL
 
-        StyledRect {
-            Layout.fillWidth: true
-            height: 6
-            radius: 3
-            color: Theme.surfaceContainerHighest
-            StyledRect {
-                width: parent.width * Math.min(1.0, (root.sysResources.cpu.usage_percent || 0) / 100.0)
-                height: parent.height
-                radius: parent.radius
-                color: root.getMetricColorFunc(root.sysResources.cpu.usage_percent || 0)
+            Item {
+                Layout.preferredWidth: 140
+                Layout.preferredHeight: 146
+                Canvas {
+                    id: cpuRing
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    width: 132
+                    height: 132
+                    onWidthChanged: requestPaint()
+                    onHeightChanged: requestPaint()
+                    onPaint: {
+                        var ctx = getContext("2d");
+                        ctx.clearRect(0, 0, width, height);
+                        ctx.lineWidth = 10;
+                        ctx.lineCap = "round";
+                        ctx.beginPath();
+                        ctx.strokeStyle = Theme.surfaceContainerHighest;
+                        ctx.arc(width / 2, height / 2, 52, -Math.PI * 0.75, Math.PI * 0.75);
+                        ctx.stroke();
+                        ctx.beginPath();
+                        ctx.strokeStyle = root.getMetricColorFunc(root.cpuValue);
+                        ctx.arc(width / 2, height / 2, 52, -Math.PI * 0.75, -Math.PI * 0.75 + Math.PI * 1.5 * Math.max(0, Math.min(100, root.cpuValue)) / 100);
+                        ctx.stroke();
+                    }
+                }
+                Column {
+                    anchors.centerIn: cpuRing
+                    spacing: 1
+                    StyledText { text: root.sysResources.cpu.usage_percent === undefined ? "N/A" : root.cpuValue.toFixed(1) + "%"; font.pixelSize: Theme.fontSizeLarge + 7; font.weight: Font.Bold; color: Theme.surfaceText; anchors.horizontalCenter: parent.horizontalCenter }
+                    StyledText { text: "CPU"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceVariantText; anchors.horizontalCenter: parent.horizontalCenter }
+                }
+                StyledText {
+                    visible: root.showCpuTemperature
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.bottom: parent.bottom
+                    text: "Temperature  " + (root.sysResources.cpu.temp_c == null ? "N/A" : root.sysResources.cpu.temp_c + "°C")
+                    font.pixelSize: Theme.fontSizeSmall - 1
+                    color: Theme.surfaceVariantText
+                }
             }
-        }
 
-        RowLayout {
-            Layout.fillWidth: true
-            StyledText { text: "RAM Usage"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; font.weight: Font.Bold }
-            Item { Layout.fillWidth: true }
-            StyledText {
-                text: `${(root.sysResources.memory.usage_percent || 0).toFixed(1)}%`
-                font.pixelSize: Theme.fontSizeSmall
-                color: root.getMetricColorFunc(root.sysResources.memory.usage_percent || 0)
-                font.weight: Font.Bold
-            }
-        }
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: Theme.spacingM
 
-        StyledRect {
-            Layout.fillWidth: true
-            height: 6
-            radius: 3
-            color: Theme.surfaceContainerHighest
-            StyledRect {
-                width: parent.width * Math.min(1.0, (root.sysResources.memory.usage_percent || 0) / 100.0)
-                height: parent.height
-                radius: parent.radius
-                color: root.getMetricColorFunc(root.sysResources.memory.usage_percent || 0)
-            }
-        }
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 5
+                    RowLayout {
+                        Layout.fillWidth: true
+                        StyledText { text: "Memory"; font.pixelSize: Theme.fontSizeMedium; font.weight: Font.Bold; color: Theme.surfaceText; Layout.fillWidth: true }
+                        StyledText { text: root.sysResources.memory.usage_percent === undefined ? "N/A" : root.ramValue.toFixed(1) + "%"; font.pixelSize: Theme.fontSizeMedium; font.weight: Font.Bold; color: root.getMetricColorFunc(root.ramValue) }
+                    }
+                    StyledRect {
+                        Layout.fillWidth: true; implicitHeight: 7; radius: 4; color: Theme.surfaceContainerHighest
+                        StyledRect { width: parent.width * Math.max(0, Math.min(1, root.ramValue / 100)); height: parent.height; radius: parent.radius; color: root.getMetricColorFunc(root.ramValue) }
+                    }
+                    StyledText { text: root.sysResources.memory.total_bytes ? (Math.round(root.sysResources.memory.used_bytes / 1073741824 * 10) / 10) + " / " + (Math.round(root.sysResources.memory.total_bytes / 1073741824 * 10) / 10) + " GiB" : "Capacity unavailable"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceVariantText }
+                }
 
-        RowLayout {
-            Layout.fillWidth: true
-            StyledText { text: "Disk Root (/)"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; font.weight: Font.Bold }
-            Item { Layout.fillWidth: true }
-            StyledText {
-                text: `${(root.sysResources.disk_root.usage_percent || 0).toFixed(1)}%`
-                font.pixelSize: Theme.fontSizeSmall
-                color: root.getStorageColorFunc(root.sysResources.disk_root.usage_percent || 0)
-                font.weight: Font.Bold
-            }
-        }
-
-        StyledRect {
-            Layout.fillWidth: true
-            height: 6
-            radius: 3
-            color: Theme.surfaceContainerHighest
-            StyledRect {
-                width: parent.width * Math.min(1.0, (root.sysResources.disk_root.usage_percent || 0) / 100.0)
-                height: parent.height
-                radius: parent.radius
-                color: root.getStorageColorFunc(root.sysResources.disk_root.usage_percent || 0)
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 5
+                    RowLayout {
+                        Layout.fillWidth: true
+                        StyledText { text: "Root filesystem"; font.pixelSize: Theme.fontSizeMedium; font.weight: Font.Bold; color: Theme.surfaceText; Layout.fillWidth: true }
+                        StyledText { text: root.sysResources.disk_root.usage_percent === undefined ? "N/A" : root.diskValue.toFixed(1) + "%"; font.pixelSize: Theme.fontSizeMedium; font.weight: Font.Bold; color: root.getStorageColorFunc(root.diskValue) }
+                    }
+                    StyledRect {
+                        Layout.fillWidth: true; implicitHeight: 7; radius: 4; color: Theme.surfaceContainerHighest
+                        StyledRect { width: parent.width * Math.max(0, Math.min(1, root.diskValue / 100)); height: parent.height; radius: parent.radius; color: root.getStorageColorFunc(root.diskValue) }
+                    }
+                    StyledText { text: root.sysResources.disk_root.used_bytes !== undefined ? (Math.round(root.sysResources.disk_root.used_bytes / 1073741824 * 10) / 10) + " GiB used" : "Capacity unavailable"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceVariantText }
+                }
             }
         }
 
         Item {
             visible: root.enableGraphs
             Layout.fillWidth: true
-            implicitHeight: 55
-
-            property int hoverIndex: -1
-            property real hoverX: 0
-            property real hoverY: 0
-            property string hoverText: ""
-
+            implicitHeight: root.enableGraphs ? 66 : 0
             Canvas {
-                id: cpuCanvas
+                id: historyGraph
                 anchors.fill: parent
+                onWidthChanged: requestPaint()
                 onPaint: {
                     var ctx = getContext("2d");
                     ctx.clearRect(0, 0, width, height);
-
-                    var h = height - 12;
-                    var w = width - 24;
-                    var x0 = 20;
-
-                    ctx.beginPath();
+                    ctx.strokeStyle = Theme.withAlpha(Theme.outlineStrong, 0.4);
                     ctx.lineWidth = 1;
-                    ctx.strokeStyle = Theme.surfaceContainerHighest;
-                    ctx.moveTo(x0, 2);
-                    ctx.lineTo(x0 + w, 2);
-                    ctx.moveTo(x0, h / 2 + 2);
-                    ctx.lineTo(x0 + w, h / 2 + 2);
-                    ctx.moveTo(x0, h + 2);
-                    ctx.lineTo(x0 + w, h + 2);
-                    ctx.stroke();
-
-                    ctx.fillStyle = Theme.surfaceVariantText;
-                    ctx.font = "8px sans-serif";
-                    ctx.fillText("100%", 0, 8);
-                    ctx.fillText("50%", 0, h / 2 + 5);
-                    ctx.fillText("0%", 0, h + 5);
-
+                    ctx.beginPath(); ctx.moveTo(0, height - 5); ctx.lineTo(width, height - 5); ctx.stroke();
                     if (!root.cpuHistory || root.cpuHistory.length < 2) return;
-
-                    ctx.beginPath();
+                    ctx.strokeStyle = root.getMetricColorFunc(root.cpuValue);
                     ctx.lineWidth = 2;
-                    ctx.strokeStyle = root.getMetricColorFunc(root.sysResources.cpu.usage_percent || 0);
-
-                    var step = w / (root.cpuHistory.length - 1);
+                    ctx.beginPath();
                     for (var i = 0; i < root.cpuHistory.length; i++) {
-                        var val = root.cpuHistory[i] || 0;
-                        var y = h - (val / 100.0 * h) + 2;
-                        var x = x0 + i * step;
-                        if (i === 0) ctx.moveTo(x, y);
-                        else ctx.lineTo(x, y);
+                        var x = i * width / (root.cpuHistory.length - 1);
+                        var y = height - 5 - Math.max(0, Math.min(100, root.cpuHistory[i])) * (height - 12) / 100;
+                        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
                     }
                     ctx.stroke();
-
-                    if (parent.hoverIndex >= 0 && parent.hoverIndex < root.cpuHistory.length) {
-                        var hx = x0 + parent.hoverIndex * step;
-                        var hval = root.cpuHistory[parent.hoverIndex] || 0;
-                        var hy = h - (hval / 100.0 * h) + 2;
-
-                        ctx.beginPath();
-                        ctx.lineWidth = 1;
-                        ctx.strokeStyle = Theme.primary;
-                        ctx.moveTo(hx, 0);
-                        ctx.lineTo(hx, h + 4);
-                        ctx.stroke();
-
-                        ctx.beginPath();
-                        ctx.arc(hx, hy, 4, 0, 2 * Math.PI);
-                        ctx.fillStyle = Theme.primary;
-                        ctx.fill();
-                    }
-                }
-
-                Connections {
-                    target: root
-                    function onCpuHistoryChanged() {
-                        if (root.enableGraphs) cpuCanvas.requestPaint();
-                    }
                 }
             }
-
-            MouseArea {
-                anchors.fill: parent
-                hoverEnabled: true
-                onPositionChanged: (mouse) => {
-                    var w = width - 24;
-                    var x0 = 20;
-                    if (mouse.x >= x0 && mouse.x <= x0 + w && root.cpuHistory.length > 1) {
-                        var step = w / (root.cpuHistory.length - 1);
-                        var idx = Math.round((mouse.x - x0) / step);
-                        idx = Math.max(0, Math.min(root.cpuHistory.length - 1, idx));
-                        parent.hoverIndex = idx;
-                        parent.hoverX = x0 + idx * step;
-                        var val = root.cpuHistory[idx] || 0;
-                        parent.hoverY = (height - 12) - (val / 100.0 * (height - 12)) + 2;
-                        parent.hoverText = `CPU: ${val.toFixed(1)}%`;
-                    } else {
-                        parent.hoverIndex = -1;
-                    }
-                    cpuCanvas.requestPaint();
-                }
-                onExited: {
-                    parent.hoverIndex = -1;
-                    cpuCanvas.requestPaint();
-                }
-            }
-
-            StyledRect {
-                visible: parent.hoverIndex >= 0
-                x: Math.min(parent.width - width - 4, Math.max(4, parent.hoverX - width / 2))
-                y: Math.max(0, parent.hoverY - 24)
-                width: hoverLabel.implicitWidth + 12
-                height: 20
-                radius: Theme.cornerRadiusSmall
-                color: Theme.surfaceContainerHighest
-                border.color: Theme.primary
-                border.width: 1
-
-                StyledText {
-                    id: hoverLabel
-                    anchors.centerIn: parent
-                    text: parent.parent.hoverText
-                    font.pixelSize: Theme.fontSizeSmall - 1
-                    font.weight: Font.Bold
-                    color: Theme.primary
-                }
-            }
+            StyledText { anchors.left: parent.left; anchors.top: parent.top; text: "CPU TREND"; font.pixelSize: Theme.fontSizeSmall - 1; font.weight: Font.Bold; color: Theme.surfaceVariantText }
         }
     }
 }

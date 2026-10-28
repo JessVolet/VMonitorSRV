@@ -1,8 +1,8 @@
 {
   "id": "vMonitorSRV",
   "name": "VMonitorSRV",
-  "description": "Live monitoring of CPU, RAM, Btrfs, Network and Podman Containers via Bottle API",
-  "version": "1.0.0",
+  "description": "Remote Glances monitoring for resources, storage, networks, containers and alerts",
+  "version": "2.2.0",
   "author": "JessVolet",
   "icon": "developer_board",
   "type": "composite",
@@ -15,8 +15,7 @@
     "desktop": "./Desktop.qml"
   },
   "settings": "./Settings.qml",
-  "startupCheck": "./StartupCheck.qml",
-  "requires_dms": ">=1.5.0",
+  "requires_dms": ">=2.0.0",
   "permissions": [
     "network",
     "settings_read",

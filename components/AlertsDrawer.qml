@@ -2,55 +2,79 @@ import QtQuick
 import QtQuick.Layouts
 import qs.Common
 import qs.Widgets
+import qs.DCommon.Widgets
 
 StyledRect {
     id: root
-
     property var crossServerAlerts: []
+    property var alertDetails: []
 
     Layout.fillWidth: true
-    implicitHeight: Math.max(100, Math.min(200, root.crossServerAlerts.length * 40 + 50))
+    implicitHeight: contents.implicitHeight + Theme.spacingM * 2
     radius: Theme.cornerRadius
-    color: Theme.surfaceContainerHighest
+    color: Theme.surfaceContainerHigh
 
     ColumnLayout {
+        id: contents
         anchors.fill: parent
         anchors.margins: Theme.spacingM
-        spacing: Theme.spacingS
+        spacing: Theme.spacingM
 
-        StyledText {
-            text: "Cross-Server Active Alerts"
-            font.pixelSize: Theme.fontSizeMedium
-            font.weight: Font.Bold
-            color: Theme.error
+        RowLayout {
+            Layout.fillWidth: true
+            DIcon { name: "notifications_active"; size: 21; color: root.crossServerAlerts.length ? Theme.warning : Theme.primary }
+            StyledText { text: "Alerts"; font.pixelSize: Theme.fontSizeLarge; font.weight: Font.Bold; color: Theme.surfaceText; Layout.fillWidth: true }
+            StyledText { text: String(root.crossServerAlerts.reduce(function(sum, item) { return sum + item.count; }, 0)); font.pixelSize: Theme.fontSizeMedium; font.weight: Font.Bold; color: root.crossServerAlerts.length ? Theme.warning : Theme.primary }
         }
 
-        ListView {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            clip: true
-            model: root.crossServerAlerts
-            spacing: Theme.spacingXS
-            delegate: StyledRect {
-                width: ListView.view.width
-                height: 34
-                radius: Theme.cornerRadiusSmall
-                color: Theme.surfaceContainerHigh
+        StyledText {
+            visible: root.crossServerAlerts.length === 0
+            text: "No active alerts reported by configured servers"
+            font.pixelSize: Theme.fontSizeSmall
+            color: Theme.surfaceVariantText
+        }
 
+        Repeater {
+            model: root.crossServerAlerts
+            delegate: StyledRect {
+                required property var modelData
+                Layout.fillWidth: true
+                implicitHeight: 48
+                radius: Theme.cornerRadiusSmall
+                color: Theme.surfaceContainerHighest
                 RowLayout {
                     anchors.fill: parent
                     anchors.margins: Theme.spacingS
-                    spacing: Theme.spacingS
+                    DIcon { name: "warning"; size: 18; color: Theme.warning }
+                    StyledText { text: modelData.serverName || modelData.host; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; Layout.fillWidth: true }
+                    StyledText { text: String(modelData.count); font.pixelSize: Theme.fontSizeSmall; font.weight: Font.Bold; color: Theme.warning }
+                }
+            }
+        }
 
-                    DankIcon { name: "warning"; color: Theme.error }
+        StyledText { text: "Selected server · critical details"; font.pixelSize: Theme.fontSizeSmall; font.weight: Font.Bold; color: Theme.surfaceVariantText }
+        StyledText { visible: root.alertDetails.length === 0; text: "No critical alert details"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceVariantText }
 
-                    StyledText {
-                        text: modelData.log || `${modelData.serverName}: ${modelData.count} alert(s)`
-                        font.pixelSize: Theme.fontSizeSmall
-                        color: Theme.surfaceText
+        Repeater {
+            model: root.alertDetails
+            delegate: StyledRect {
+                required property var modelData
+                Layout.fillWidth: true
+                implicitHeight: detailContent.implicitHeight + Theme.spacingS * 2
+                radius: Theme.cornerRadiusSmall
+                color: Theme.surfaceContainerHighest
+                ColumnLayout {
+                    id: detailContent
+                    anchors.fill: parent
+                    anchors.margins: Theme.spacingS
+                    spacing: Theme.spacingXS
+                    RowLayout {
                         Layout.fillWidth: true
-                        elide: Text.ElideRight
+                        DIcon { name: "error"; size: 18; color: Theme.error }
+                        StyledText { text: (modelData.type || "Alert") + " · " + (modelData.state || "CRITICAL"); font.pixelSize: Theme.fontSizeSmall; font.weight: Font.Bold; color: Theme.error; Layout.fillWidth: true }
                     }
+                    StyledText { text: modelData.message || "No message supplied"; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; wrapMode: Text.Wrap; Layout.fillWidth: true }
+                    StyledText { text: "Peak " + (modelData.max_value ?? "N/A") + "  ·  Average " + (modelData.avg_value ?? "N/A") + "  ·  " + (modelData.ongoing ? "Ongoing" : "Ended"); font.pixelSize: Theme.fontSizeSmall - 1; color: Theme.surfaceVariantText }
                 }
             }
         }
